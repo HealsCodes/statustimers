@@ -6,8 +6,8 @@ This addon provides a configurable replacement for the in-game status icons in F
 
 - full replacement for XI's status effects UI with free placement  
   ![](https://github.com/Shirk/statustimers/blob/docs/gif/replace-system.gif?raw=true)
-- see your own status effects as well as your party target and sub-target's  
-![](https://github.com/Shirk/statustimers/blob/docs/gif/show-target-status.gif?raw=true)
+- see your own status effects as well as targeted party members and sub-targets  
+![](https://github.com/Shirk/statustimers/blob/docs/gif/target-and-subtarget.gif?raw=true)
 - tooltips for all status effects  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/tooltips.gif?raw=true)
 - easily clear any cancellable effect with a mouse click  
