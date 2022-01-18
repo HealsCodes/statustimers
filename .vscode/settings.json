@@ -1,0 +1,49 @@
+{
+    "Lua.diagnostics.disable": [
+        "lowercase-global",
+        "undefined-field"
+    ],
+    "Lua.diagnostics.globals": [
+        // Global Tables
+        "addon",
+        "ashita",
+        "bit",
+        "struct",
+        // Global Objects
+        "AshitaCore",
+        "LogManager",
+        "RECT",
+        "SIZE",
+        // Global Functions
+        "GetEntity",
+        "GetPlayerEntity",
+        // Enums
+        "PluginFlags",
+        "CommandMode",
+        "ChatInputOpenStatus",
+        "LogLevel",
+        "FrameAnchor",
+        "KeyboardEvent",
+        "MouseEvent",
+        "FontBorderFlags",
+        "FontCreateFlags",
+        "FontDrawFlags"
+    ],
+    "Lua.runtime.version": "LuaJIT",
+    "Lua.completion.callSnippet": "Both",
+    "Lua.hint.enable": true,
+    "Lua.hint.setType": true,
+    "Lua.workspace.library": [
+        "../../../../../../Games/SquareEnix/Ashita_v4/addons/libs/"
+    ],
+    "lua.debug.settings.luaArch": "arm64",
+    "lua.debug.settings.path": [
+        "/opt/homebrew/bin/"
+    ],
+    "Lua.diagnostics.libraryFiles": "Enable",
+    "Lua.workspace.ignoreDir": [
+        ".vscode",
+        "._*",
+        ".DS_Store"
+    ]
+}

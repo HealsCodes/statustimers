@@ -1,0 +1,384 @@
+--[[
+* statustimers - Copyright (c) 2022 Heals
+*
+* This file is part of statustimers for Ashita.
+*
+* statustimers is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* statustimers is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with statustimers.  If not, see <https://www.gnu.org/licenses/>.
+--]]
+
+-------------------------------------------------------------------------------
+-- imports
+-------------------------------------------------------------------------------
+require('common');
+
+local bit   = require('bit');
+local imgui = require('imgui');
+-- local modules
+local helpers   = require('helpers');
+local resources = require('resources')
+local party     = require('party');
+-------------------------------------------------------------------------------
+-- local constants
+-------------------------------------------------------------------------------
+local ITEM_SPACING = 3;
+-------------------------------------------------------------------------------
+-- local state
+-------------------------------------------------------------------------------
+local settings = T {};
+local ui = T {
+    is_open = T{ true, },
+    color = T {
+        label = T{},
+        label_bg = T{},
+        va = T{
+            _100 = T{},
+            _75  = T{},
+            _50  = T{},
+            _25  = T{}
+        },
+    },
+    id_states = T{},
+    window_flags = T{
+        current  = bit.bor(ImGuiWindowFlags_NoDecoration, ImGuiWindowFlags_AlwaysAutoResize),
+        inactive = bit.bor(ImGuiWindowFlags_NoDecoration, ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_AlwaysAutoResize),
+        active   = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_AlwaysAutoResize);
+    }
+};
+
+-------------------------------------------------------------------------------
+-- local functions
+-------------------------------------------------------------------------------
+-- return the fixed item width as well as the max label dimensions
+---@return table sizes { item_width_main, item_width_target, { text_dim.x, text_dim.y } }
+local function get_base_sizes()
+    local text_dim = { imgui.CalcTextSize('WWW') };
+    return T{ 
+        math.max(text_dim[1], settings.icons.size.main ),
+        math.max(text_dim[1], settings.icons.size.target ),
+        text_dim
+    };
+end
+
+-- return the dimensions of the player status list
+---@return table size { w, h } for the player status list
+local function player_status_size()
+    local status = party.get_player_status();
+    local item_width, _, text_dim = get_base_sizes():unpack();
+    --local text_dim = { imgui.CalcTextSize('99h'); };
+    --local item_width = math.max(settings.icons.size.main, text_dim[1]);
+    local va_multiplier = settings.visual_aid.enabled and 2 or 1;
+
+    if (status ~= nil) then
+        return { #status * (item_width + ITEM_SPACING), item_width + ITEM_SPACING + text_dim[2] * va_multiplier };
+    end
+    return { 0, 0 };
+end
+
+-- return the dimensions of an arbitrary status list
+---@param label string the targets name label or nil
+---@param status_list table the targets status list or nil
+---@return table size { w, h } for the targets status list
+local function target_status_size(label, status_list)
+    local text_dim = { imgui.CalcTextSize(label or ''); };
+
+    if (status_list ~= nil) then
+        return {
+            #status_list * (settings.icons.size.target + ITEM_SPACING) + text_dim[1] + 2 * ITEM_SPACING,
+            math.max(settings.icons.size.target, text_dim[2]) + 2 * ITEM_SPACING
+        };
+    elseif (label ~= nil) then
+        return { text_dim[1] + 2 * ITEM_SPACING, text_dim[2] + 2 * ITEM_SPACING };
+    end
+    return { 0, 0 };
+end
+
+-- return the required width and height of the main window
+---@return table size ImVec2 containing the required window size
+local function get_window_size()
+    local player_size  = player_status_size();
+    local mtarget_size = target_status_size(party.get_target_name(), party.get_target_status());
+    local starget_size = target_status_size(party.get_subtarget_name(), party.get_subtarget_status());
+    local spacing = 0;
+
+    if (mtarget_size[1] ~= 0) then spacing = spacing + ITEM_SPACING; end
+    if (starget_size[1] ~= 0) then spacing = spacing + ITEM_SPACING; end
+
+    return {
+        -- whichever list is widest determines the width of the window
+        math.max(player_size[1], mtarget_size[1], starget_size[1]),
+        -- the height of the window is always the sum of all lists
+        player_size[2] + mtarget_size[2] + starget_size[2] + ITEM_SPACING + spacing;
+    };
+end
+
+-- wrap all calls required to add a rectangle to imgui's draw list
+---@param top_left table ImVec2, x/y coordinates relative to cursor
+---@param bot_right table ImVec2, bottom/right coordinatens relative to cursor
+---@param color table ImVec4, rgba colour values in range 0.0 to 1.0
+---@param radius number optional corner radius
+---@param fill boolean wether to fill the rect or draw a simple outline
+---@param flags number ImGuiRoundingCornerFlags, defaults to 'all'
+local function draw_rect(top_left, bot_right, color, radius, fill, flags)
+    local cursor = { imgui.GetCursorScreenPos() };
+    local color_u32 = imgui.GetColorU32(color);
+    local abs_rect = {
+        { cursor[1] + top_left[1], cursor[2] + top_left[2] },
+        { cursor[1] + bot_right[1], cursor[2] + bot_right[2] }
+    };
+
+    if (true) then
+        imgui.GetWindowDrawList():AddRectFilled(abs_rect[1], abs_rect[2], color_u32, radius or 0.0, flags or ImDrawCornerFlags_All);
+    else
+        imgui.GetWindowDrawList():AddRect(abs_rect[1], abs_rect[2], color_u32, radius or 0.0, flags or ImDrawCornerFlags_All);
+    end
+end
+
+-- keep track of a status id's initial and remaining duration
+--- and also animate it's alpha value based on the remainder.
+---@param status number the status id to track
+---@param duration number the number in seconds left until expiry
+local function track_id_state(status, duration)
+    if (not ui.id_states:haskey(status) or ui.id_states[status] == nil) then
+        ui.id_states[status] = T{ alpha = 1.0, alpha_step = -0.05, duration = duration };
+    else
+        if (duration > -1 and duration <= 15) then
+            -- qualified for animation
+            ui.id_states[status].alpha = ui.id_states[status].alpha + ui.id_states[status].alpha_step;
+            if (ui.id_states[status].alpha < 0.01 or ui.id_states[status].alpha > 1.0) then
+                ui.id_states[status].alpha_step = -ui.id_states[status].alpha_step
+            end
+        end
+    end
+end
+
+-- clean out stale status id information from the id_states map
+local function prune_id_states()
+    local player_status = party.get_player_status();
+    if (player_status == nil) then
+       return;
+    end
+
+    local status_ids = player_status:imap(function (v) return v.id; end);
+    local id_state_keys = ui.id_states:keys();
+    for i = 1,#id_state_keys,1 do
+        if (not status_ids:hasvalue(id_state_keys[i])) then
+            ui.id_states[id_state_keys[i]] = nil;
+        end
+    end
+end
+
+-- render the tooltip for a specific status id
+---@param status number the status id
+---@param is_target boolean if true, don't show '(right click to cancel)' hint
+local function render_tooltip(status, is_target)
+    if (status == nil or status < 0 or status > 0x3FF or status == 255) then
+        return;
+    end
+
+    local info = AshitaCore:GetResourceManager():GetStatusIconById(status);
+    if (info ~= nil) then
+        imgui.BeginTooltip();
+            imgui.Text(info.Description[1]);
+            if (not is_target and resources.status_can_be_cancelled(status)) then
+                imgui.TextDisabled('(right click to cancel)');
+            end
+        imgui.EndTooltip();
+    end
+end
+
+-- render the name and status icons box for a (sub)target
+---@param name string the target name tag or nil
+---@param status_list table a list of status ids for the target or nil
+local function render_target_status(name, status_list)
+    if (name == nil and status_list == nil) then
+        return;
+    end
+
+    imgui.Dummy( { 0, 0 });
+
+    local bg = { { 0, 0}, target_status_size(name, status_list) };
+    local corner_flags = bit.bor(ImDrawCornerFlags_BotLeft, ImDrawCornerFlags_TopRight);
+
+    draw_rect(bg[1], bg[2], ui.color.label_bg, 7.0, true, corner_flags);
+    imgui.SetCursorPos({ imgui.GetCursorPosX() + ITEM_SPACING, imgui.GetCursorPosY() + ITEM_SPACING });
+
+    -- target name goes left of the icons
+    imgui.TextColored(ui.color.label, name or '');
+    if (status_list ~= nil and next(status_list)) then
+        imgui.SameLine(0);
+
+        for i = 1,#status_list,1 do
+
+            local icon = resources.get_icon_from_theme(settings.icons.theme, status_list[i]);
+            imgui.Image(icon, { settings.icons.size.target, settings.icons.size.target });
+
+            if (imgui.IsItemHovered()) then
+                -- show a tooltip even for the targets status effects
+                render_tooltip(status_list[i], true);
+            end
+
+            if (i < #status_list) then
+                imgui.SameLine(0);
+            end
+        end
+    end
+end
+
+-- render the coloured visual aid swatch for a status
+---@param status number the id of the status effect
+---@param duration number the remaining status duration in seconds
+---@param size table ImVec2 with and height of the swatch
+local function render_visual_aid_bar(status, duration, size)
+    if (not resources.status_has_visual_aid(status, settings)) then
+        return;
+    end
+
+    -- pick the current aid colour
+    local progress = duration * 100.0 / ui.id_states[status].duration;
+    local color = {0.0, 0.0, 0.0, 0.0};
+
+    if (duration == -1) then
+        color = { 1.0, 1.0, 1.0, 0.25 };
+    else
+        if (progress > 75) then
+            color = ui.color.va._100;
+        elseif (progress > 50) then
+            color = ui.color.va._75;
+        elseif (progress > 25) then
+            color = ui.color.va._50;
+        else
+            color = ui.color.va._25;
+        end
+        color[4] = ui.id_states[status].alpha;
+    end
+
+    local rect = { { 0, 0 }, size };
+    draw_rect(rect[1], rect[2], color, 7.0, true);
+    imgui.Dummy( size );
+end
+
+-------------------------------------------------------------------------------
+-- exported functions
+-------------------------------------------------------------------------------
+local module = {};
+
+-- render the main statustimers UI
+---@param s table the global settings table
+---@param status_clicked function fn(id) callback to cancel the selected status
+---@param settings_clicked function callback when the user clicks the settings icon
+module.render_main_ui = function(s, status_clicked, settings_clicked)
+    settings = s;
+
+    -- clean up since the last frame
+    prune_id_states();
+
+    -- pre parse the argb colours into ImVec4
+    ui.color.label    = helpers.color_u32_to_v4(settings.font.color);
+    ui.color.label_bg = helpers.color_u32_to_v4(settings.font.background);
+    ui.color.va._100  = helpers.color_u32_to_v4(settings.visual_aid.color100);
+    ui.color.va._75   = helpers.color_u32_to_v4(settings.visual_aid.color75);
+    ui.color.va._50   = helpers.color_u32_to_v4(settings.visual_aid.color50);
+    ui.color.va._25   = helpers.color_u32_to_v4(settings.visual_aid.color25);
+
+    imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, {ITEM_SPACING, ITEM_SPACING});
+
+    imgui.SetNextWindowBgAlpha(0.45);
+    imgui.SetNextWindowContentSize(get_window_size());
+
+    if (imgui.Begin('st_ui', ui.is_open, ui.window_flags.current)) then
+        local item_width, _, text_dim = get_base_sizes():unpack();
+        local player_status = party.get_player_status();
+
+        -- render the player status
+        if (player_status ~= nil) then
+            for i = 1,#player_status,1 do
+                -- run the bookkeeping for duration and fade states
+                track_id_state(player_status[i].id, player_status[i].duration);
+
+                local icon = resources.get_icon_from_theme(settings.icons.theme, player_status[i].id);
+                local label = helpers.formatted_duration(player_status[i].duration);
+
+                -- respect hidden timers
+                if (resources.status_timer_hidden(player_status[i].id)) then
+                    label = '???';
+                end
+
+                text_dim = { imgui.CalcTextSize(label) };
+
+                --imgui.PushItemWidth(16);
+                imgui.BeginGroup();
+                    local icon_tint = { 1.0, 1.0, 1.0, ui.id_states[player_status[i].id].alpha }
+
+                    imgui.SetCursorPosX(imgui.GetCursorPosX() + ((item_width - settings.icons.size.main) * 0.5));
+                    imgui.Image(icon, { settings.icons.size.main, settings.icons.size.main }, { 0, 0 }, { 1, 1 }, icon_tint);
+
+                    if (imgui.IsItemHovered()) then
+                        render_tooltip(player_status[i].id, false);
+                    end
+
+                    -- this dummy is essential for correct resizing as it always has the actual item_width
+                    imgui.Dummy({ item_width + ITEM_SPACING, 1 });
+
+                    if (i == 1) then
+                        -- first item also draws the background for the whole row
+                        local bg = { { -ITEM_SPACING, -ITEM_SPACING * 0.5 }, { player_status_size()[1], text_dim[2] } };
+
+                        if (settings.visual_aid.enabled) then
+                            -- visual aid adds another row below the timers
+                            bg[2][2] = bg[2][2] + text_dim[2] + ITEM_SPACING;
+                        end
+                        draw_rect(bg[1], bg[2], ui.color.label_bg, 7.0);
+                    end
+
+                    imgui.SetCursorPosX(imgui.GetCursorPosX() + ((item_width - text_dim[1]) * 0.5));
+                    imgui.TextColored(ui.color.label, label);
+
+                    if (settings.visual_aid.enabled) then
+                        render_visual_aid_bar(player_status[i].id, player_status[i].duration, { item_width, text_dim[2] - ITEM_SPACING });
+                    end
+                imgui.EndGroup();
+                if (imgui.IsItemClicked(ImGuiMouseButton_Right)) then
+                    if (status_clicked ~= nil and resources.status_can_be_cancelled(player_status[i].id)) then
+                        status_clicked(player_status[i].id);
+                    end
+                end
+
+                if i < #player_status then
+                    imgui.SameLine(0, 0);
+                end
+            end
+        end
+
+        -- render the player's target
+        render_target_status(party.get_target_name(), party.get_target_status());
+        -- render the player's subtarget
+        render_target_status(party.get_subtarget_name(), party.get_subtarget_status());
+
+
+        -- add the settings button if the window is being hovered
+        if (imgui.IsWindowHovered() and settings_clicked ~= nil) then
+            imgui.SetCursorPos({ imgui.GetWindowWidth() - 25, imgui.GetWindowHeight() - 25 });
+            imgui.Button('\xef\x82\xad', { 20, 20 });
+            if (imgui.IsItemClicked()) then
+                settings_clicked();
+            end
+        end
+
+        -- update the window state for the next draw
+        ui.window_flags.current = imgui.IsWindowHovered() and ui.window_flags.active or ui.window_flags.inactive;
+    end
+    imgui.End();
+end
+
+return module;
