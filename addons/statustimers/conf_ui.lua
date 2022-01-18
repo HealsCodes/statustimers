@@ -26,13 +26,15 @@ local imgui = require('imgui');
 -- local modules
 local helpers = require('helpers');
 local resources = require('resources')
+local filters_ui = require('conf_filters_ui');
 -------------------------------------------------------------------------------
 -- local state
 -------------------------------------------------------------------------------
 local ui = T {
     is_open = T{ false, },
-    theme_valid = true,
-    theme_index = { resources.get_theme_index('-default-') },
+    is_filters_open = T { false, },
+    -- main config ui
+    theme_index = T{ resources.get_theme_index('-default-') },
 };
 -------------------------------------------------------------------------------
 -- exported functions
@@ -55,7 +57,7 @@ module.render_config_ui = function(settings, toggle)
     local c = { 0, 0, 0, 0 };
     local header_color = { 1.0, 0.75, 0.55, 1.0 };
 
-    imgui.SetNextWindowContentSize({400, 380});
+    imgui.SetNextWindowContentSize({ 400, 525 });
 
     if (imgui.Begin(('Statustimers v%s'):fmt(addon.version), ui.is_open, ImGuiWindowFlags_AlwaysAutoResize)) then
         imgui.BeginGroup();
@@ -115,44 +117,76 @@ module.render_config_ui = function(settings, toggle)
             -- visual toggle and colour blocks
             imgui.TextColored(header_color, 'Visual Aid');
             imgui.ShowHelp('Visual Aid shows a coloured swatch below each status effect.\n' ..
-                                'The remaining % is based on when statustimers first tracked\n' ..
-                                'a status effect and thus may not be accurate for pre-existing effects (Signed, etc.).');
+                                'The colour is based the remaining duration in seconds and fully configurable.\n');
 
-            imgui.BeginChild('conf_va', { 0, 135 }, true)
+            imgui.BeginChild('conf_va', { 0, 300 }, true)
                 if (imgui.Checkbox('Enabled?', { settings.visual_aid.enabled })) then
                     settings.visual_aid.enabled = not settings.visual_aid.enabled;
                 end
                 imgui.ShowHelp('Show visual aid swatches.');
 
-                c = helpers.color_u32_to_v4(settings.visual_aid.color100);
-                if (imgui.ColorEdit4('\xef\x80\x97 > 75%', c)) then
-                    settings.visual_aid.color100 = helpers.color_v4_to_u32(c);
-                end
-                imgui.ShowHelp('Aid colour with more than 75% remaining duration.', true);
+                imgui.TextColored(header_color, 'Thresholds');
+                imgui.BeginChild('conf_va_threshold', { 0, 85 }, true)
+                    imgui.PushID('T#1');
+                    imgui.InputInt(' ', settings.visual_aid.thresholds.t75);
+                    imgui.PopID();
+                    imgui.SameLine();
+                    imgui.TextColored(helpers.color_u32_to_v4(settings.visual_aid.color75), '\xef\x80\x97 T1');
+                    imgui.ShowHelp('Threshold in seconds remaining.', true);
 
-                c = helpers.color_u32_to_v4(settings.visual_aid.color75);
-                if (imgui.ColorEdit4('\xef\x80\x97 > 50%', c)) then
-                    settings.visual_aid.color75 = helpers.color_v4_to_u32(c);
-                end
-                imgui.ShowHelp('Aid colour with more than 50% remaining duration.', true);
+                    imgui.PushID('T#2');
+                    imgui.InputInt(' ', settings.visual_aid.thresholds.t50);
+                    imgui.PopID();
+                    imgui.SameLine();
+                    imgui.TextColored(helpers.color_u32_to_v4(settings.visual_aid.color50), '\xef\x80\x97 T2');
+                    imgui.ShowHelp('Threshold in seconds remaining.', true);
 
-                c = helpers.color_u32_to_v4(settings.visual_aid.color50);
-                if (imgui.ColorEdit4('\xef\x80\x97 > 25%', c)) then
-                    settings.visual_aid.color50 = helpers.color_v4_to_u32(c);
-                end
-                imgui.ShowHelp('Aid colour with more than 25% remaining duration.', true);
+                    imgui.PushID('T#3');
+                    imgui.InputInt(' ', settings.visual_aid.thresholds.t25);
+                    imgui.PopID();
+                    imgui.SameLine();
+                    imgui.TextColored(helpers.color_u32_to_v4(settings.visual_aid.color25), '\xef\x80\x97 T3');
+                    imgui.ShowHelp('Threshold in seconds remaining.', true);
+                imgui.EndChild();
 
-                c = helpers.color_u32_to_v4(settings.visual_aid.color25);
-                if (imgui.ColorEdit4('\xef\x80\x97 < 25%', c)) then
-                    settings.visual_aid.color25 = helpers.color_v4_to_u32(c);
+                imgui.TextColored(header_color, 'Colours');
+                imgui.BeginChild('conf_va_colours', { 0, 110 }, true)
+                    c = helpers.color_u32_to_v4(settings.visual_aid.color100);
+                    if (imgui.ColorEdit4(('\xef\x80\x97 > T1 (%ds)'):format(settings.visual_aid.thresholds.t75[1]), c)) then
+                        settings.visual_aid.color100 = helpers.color_v4_to_u32(c);
+                    end
+                    imgui.ShowHelp('Aid colour with more than T1 seconds remaining.', true);
+
+                    c = helpers.color_u32_to_v4(settings.visual_aid.color75);
+                    if (imgui.ColorEdit4(('\xef\x80\x97 > T2 (%ds)'):format(settings.visual_aid.thresholds.t50[1]), c)) then
+                        settings.visual_aid.color75 = helpers.color_v4_to_u32(c);
+                    end
+                    imgui.ShowHelp('Aid colour with more than T2 seconds remaining.', true);
+
+                    c = helpers.color_u32_to_v4(settings.visual_aid.color50);
+                    if (imgui.ColorEdit4(('\xef\x80\x97 > T3 (%ds)'):format(settings.visual_aid.thresholds.t25[1]), c)) then
+                        settings.visual_aid.color50 = helpers.color_v4_to_u32(c);
+                    end
+                    imgui.ShowHelp('Aid colour with more than T3 seconds remaining.', true);
+
+                    c = helpers.color_u32_to_v4(settings.visual_aid.color25);
+                    if (imgui.ColorEdit4(('\xef\x80\x97 < T3 (%ds)'):format(settings.visual_aid.thresholds.t25[1]), c)) then
+                        settings.visual_aid.color25 = helpers.color_v4_to_u32(c);
+                    end
+                    imgui.ShowHelp('Aid colour with less than T3 seconds remaining.', true);
+                imgui.EndChild();
+                if (imgui.Button('Filter Settings')) then
+                    ui.is_filters_open[1] = true;
                 end
-                imgui.ShowHelp('Aid colour below 25% remaining duration.', true);
+                imgui.ShowHelp('Setup black- or whitelist filters to define which effects receive visual aid.', true);
+
             imgui.EndChild();
-            imgui.Text('');
             imgui.TextDisabled(('\xef\x87\xb9 2022 by %s - %s'):fmt(addon.author, addon.link));
         imgui.EndGroup();
     end
     imgui.End();
+
+    filters_ui.render_config_filter_ui(settings, ui.is_filters_open);
 end
 
 return module;

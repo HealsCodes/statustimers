@@ -189,21 +189,17 @@ module.status_has_visual_aid = function(status_id, settings)
         return false;
     end
 
-    local filter_id = function(_, k) return tonumber(k) == status_id; end;
-    local include_all = settings.visual_aid.include:hasvalue('*');
-    local exclude_all = settings.visual_aid.exclude:hasvalue('*');
+    local included = settings.visual_aid.filters.ids:hasvalue(status_id);
+    local whitelist = settings.visual_aid.filters.mode == 'whitelist';
 
-    local included = settings.visual_aid.include:countf(filter_id);
-    local excluded = settings.visual_aid.exclude:countf(filter_id);
-
-    if ((include_all and excluded == 0) or (exclude_all and included ~= 0)) then
-            -- matched by wildcard and not explicitly excluded or
-            -- excluded by wildcard but explicitly included
+    if (whitelist and included) then
+        -- whitelist mode and in the list
         return true;
-    elseif (excluded == 0 and included ~= 0) then
-        -- not explicitly excluded but explicitly included
+    elseif (not whitelist and not included) then
+        -- blacklist mode and not in the list
         return true;
     end
+    -- random bonkers event and not sure..
     return false;
 end
 

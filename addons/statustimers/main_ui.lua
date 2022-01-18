@@ -185,8 +185,10 @@ local function render_tooltip(status, is_target)
     end
 
     local info = AshitaCore:GetResourceManager():GetStatusIconById(status);
-    if (info ~= nil) then
+    local name = AshitaCore:GetResourceManager():GetString('buffs.names', status);
+    if (name ~= nil and info ~= nil) then
         imgui.BeginTooltip();
+            imgui.Text(('%s (#%d)'):fmt(name, status));
             imgui.Text(info.Description[1]);
             if (not is_target and resources.status_can_be_cancelled(status)) then
                 imgui.TextDisabled('(right click to cancel)');
@@ -237,9 +239,10 @@ end
 ---@param status number the id of the status effect
 ---@param duration number the remaining status duration in seconds
 ---@param size table ImVec2 with and height of the swatch
-local function render_visual_aid_bar(status, duration, size)
+---@return true if the swatch was rendered
+local function render_visual_aid_swatch(status, duration, size)
     if (not resources.status_has_visual_aid(status, settings)) then
-        return;
+        return false;
     end
 
     -- pick the current aid colour
@@ -249,11 +252,11 @@ local function render_visual_aid_bar(status, duration, size)
     if (duration == -1) then
         color = { 1.0, 1.0, 1.0, 0.25 };
     else
-        if (progress > 75) then
+        if (duration > settings.visual_aid.thresholds.t75[1]) then
             color = ui.color.va._100;
-        elseif (progress > 50) then
+        elseif (duration > settings.visual_aid.thresholds.t50[1]) then
             color = ui.color.va._75;
-        elseif (progress > 25) then
+        elseif (progress > settings.visual_aid.thresholds.t25[1]) then
             color = ui.color.va._50;
         else
             color = ui.color.va._25;
@@ -264,6 +267,8 @@ local function render_visual_aid_bar(status, duration, size)
     local rect = { { 0, 0 }, size };
     draw_rect(rect[1], rect[2], color, 7.0, true);
     imgui.Dummy( size );
+
+    return true;
 end
 
 -------------------------------------------------------------------------------
@@ -300,6 +305,9 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
 
         -- render the player status
         if (player_status ~= nil) then
+            local add_dummy_swatch_spacer = settings.visual_aid.enabled;
+            local swatch_size = { item_width, text_dim[2] - ITEM_SPACING };
+
             for i = 1,#player_status,1 do
                 -- run the bookkeeping for duration and fade states
                 track_id_state(player_status[i].id, player_status[i].duration);
@@ -343,7 +351,9 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
                     imgui.TextColored(ui.color.label, label);
 
                     if (settings.visual_aid.enabled) then
-                        render_visual_aid_bar(player_status[i].id, player_status[i].duration, { item_width, text_dim[2] - ITEM_SPACING });
+                        if (render_visual_aid_swatch(player_status[i].id, player_status[i].duration, swatch_size)) then
+                            add_dummy_swatch_spacer = false;
+                        end
                     end
                 imgui.EndGroup();
                 if (imgui.IsItemClicked(ImGuiMouseButton_Right)) then
@@ -355,6 +365,10 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
                 if i < #player_status then
                     imgui.SameLine(0, 0);
                 end
+            end
+            if (add_dummy_swatch_spacer) then
+                -- required if visual aid is active but no whitelisted status is visible
+                imgui.Dummy(swatch_size);
             end
         end
 

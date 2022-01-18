@@ -22,11 +22,9 @@ This addon provides a configurable replacement for the in-game status icons in F
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/settings-colours.gif?raw=true)
 - visual aid swatches for the remaining effect duration  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/settings-visual-aid.gif?raw=true)
+- black- or whitelist filter mode to control which effects show swatches  
+![](https://github.com/Shirk/statustimers/blob/docs/gif/settings-visual-aid-filters.gif?raw=true)
 
-
-### TODOs:
-
-- reimplement filters for visual aid effect IDs
 
 ### NOTE:
 

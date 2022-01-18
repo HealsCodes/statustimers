@@ -19,7 +19,7 @@
 
 addon.name    = 'statustimers';
 addon.author  = 'heals';
-addon.version = '4.0.900';
+addon.version = '4.0.901';
 addon.desc    = 'Replacement for the default status timer display';
 addon.link    = 'https://github.com/Shirk/statustimers';
 
@@ -37,27 +37,36 @@ local conf_ui = require('conf_ui');
 -- local state
 -------------------------------------------------------------------------------
 local default_settings = T{
-    icons = {
-        size = {
+    icons = T{
+        size = T{
             main = 24,
             target = 16,
         },
         theme = '-default-',
     },
 
-    font = {
+    font = T{
         color = 0xFFFFFFFF,
         background = 0x72000000,
     },
 
-    visual_aid = {
+    visual_aid = T{
         enabled  = false,
-        include  = T{ '*' },
-        exclude  = T {},
         color100 = 0xFF00FF00,
         color75  = 0xFFFFFF33,
         color50  = 0xFFFFA64D,
         color25  = 0xFFFF0000,
+
+        thresholds = {
+            t75 = T{ 30 },
+            t50 = T{ 20 },
+            t25 = T{ 10 },
+        },
+
+        filters = T{
+            mode = 'blacklist',
+            ids = T{ },
+        },
     },
 };
 
@@ -82,6 +91,7 @@ end
 -------------------------------------------------------------------------------
 -- addon callbacks
 -------------------------------------------------------------------------------
+local ffi = require('ffi');
 ashita.events.register('load', 'statustimers_load', function ()
     helpers.run_init();
 end)
@@ -100,10 +110,11 @@ end)
 
 ashita.events.register('command', 'statustimers_command', function (e)
     local args = e.command:args();
-    if (#args == 0 or args[1] ~= '/statustimers') then
+    if (#args == 0 or (args[1] ~= '/statustimers' and args[1] ~= '/stt')) then
         return;
     end
 
     e.blocked = true;
+
     toggle_settings();
 end)
