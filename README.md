@@ -4,23 +4,23 @@ This addon provides a configurable replacement for the in-game status icons in F
 
 ### Current Features:
 
-- full replacement for XI's status effects UI with free placement
+- full replacement for XI's status effects UI with free placement  
   ![](https://github.com/Shirk/statustimers/blob/docs/gif/replace-system.gif?raw=true)
-- see your own status effects as well as your party target and sub-target's
+- see your own status effects as well as your party target and sub-target's  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/show-target-status.gif?raw=true)
-- tooltips for all status effects
+- tooltips for all status effects  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/tooltips.gif?raw=true)
-- easily clear any cancellable effect with a mouse click
+- easily clear any cancellable effect with a mouse click  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/cancel-status.gif?raw=true)
-- complete in-game configuration UI
+- complete in-game configuration UI  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/settings-ui.gif?raw=true)
-- support for custom icon sizes from 14x14 to 256x256
+- support for custom icon sizes from 14x14 to 256x256  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/settings-scale.gif?raw=true)
-- support for custom icon themes as png, jpg or bmp files
+- support for custom icon themes as png, jpg or bmp files  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/settings-theme.gif?raw=true)
-- configurable text and background colours
+- configurable text and background colours  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/settings-colours.gif?raw=true)
-- visual aid swatches for the remaining effect duration
+- visual aid swatches for the remaining effect duration  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/settings-visual-aid.gif?raw=true)
 
 
