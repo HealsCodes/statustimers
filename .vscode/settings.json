@@ -45,5 +45,8 @@
         ".vscode",
         "._*",
         ".DS_Store"
-    ]
+    ],
+    "files.exclude": {
+        "**/._*": true
+    }
 }

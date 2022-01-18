@@ -26,7 +26,7 @@ local bit   = require('bit');
 local imgui = require('imgui');
 -- local modules
 local helpers   = require('helpers');
-local resources = require('resources')
+local resources = require('resources');
 local party     = require('party');
 -------------------------------------------------------------------------------
 -- local constants
@@ -45,15 +45,15 @@ local ui = T {
             _100 = T{},
             _75  = T{},
             _50  = T{},
-            _25  = T{}
+            _25  = T{},
         },
     },
     id_states = T{},
     window_flags = T{
         current  = bit.bor(ImGuiWindowFlags_NoDecoration, ImGuiWindowFlags_AlwaysAutoResize),
         inactive = bit.bor(ImGuiWindowFlags_NoDecoration, ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_AlwaysAutoResize),
-        active   = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_AlwaysAutoResize);
-    }
+        active   = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_AlwaysAutoResize),
+    },
 };
 
 -------------------------------------------------------------------------------
@@ -75,8 +75,6 @@ end
 local function player_status_size()
     local status = party.get_player_status();
     local item_width, _, text_dim = get_base_sizes():unpack();
-    --local text_dim = { imgui.CalcTextSize('99h'); };
-    --local item_width = math.max(settings.icons.size.main, text_dim[1]);
     local va_multiplier = settings.visual_aid.enabled and 2 or 1;
 
     if (status ~= nil) then
@@ -156,7 +154,7 @@ local function track_id_state(status, duration)
             -- qualified for animation
             ui.id_states[status].alpha = ui.id_states[status].alpha + ui.id_states[status].alpha_step;
             if (ui.id_states[status].alpha < 0.01 or ui.id_states[status].alpha > 1.0) then
-                ui.id_states[status].alpha_step = -ui.id_states[status].alpha_step
+                ui.id_states[status].alpha_step = -ui.id_states[status].alpha_step;
             end
         end
     end
@@ -205,9 +203,9 @@ local function render_target_status(name, status_list)
         return;
     end
 
-    imgui.Dummy( { 0, 0 });
+    imgui.Dummy({ 0, 0 });
 
-    local bg = { { 0, 0}, target_status_size(name, status_list) };
+    local bg = { { 0, 0 }, target_status_size(name, status_list) };
     local corner_flags = bit.bor(ImDrawCornerFlags_BotLeft, ImDrawCornerFlags_TopRight);
 
     draw_rect(bg[1], bg[2], ui.color.label_bg, 7.0, true, corner_flags);

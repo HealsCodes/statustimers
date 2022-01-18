@@ -40,9 +40,9 @@ local default_settings = T{
     icons = {
         size = {
             main = 24,
-            target = 16
+            target = 16,
         },
-        theme = '-default-'
+        theme = '-default-',
     },
 
     font = {
@@ -63,8 +63,8 @@ local default_settings = T{
 
 local st = T {
     settings = settings.load(default_settings),
-    toggle_settings = false
-}
+    toggle_settings = false,
+};
 -------------------------------------------------------------------------------
 -- local functions
 -------------------------------------------------------------------------------

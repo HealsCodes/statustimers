@@ -123,10 +123,10 @@ module.color_v4_to_u32 = function(color_vec)
     local a = color_vec[4] * 255;
 
     return bit.bor(
-        bit.lshift(bit.band(a, 0xff), 24),
-        bit.lshift(bit.band(r, 0xff), 16),
-        bit.lshift(bit.band(g, 0xff), 8),
-        bit.band(b, 0xff)
+        bit.lshift(bit.band(a, 0xff), 24),  -- alpha
+        bit.lshift(bit.band(r, 0xff), 16), -- red
+        bit.lshift(bit.band(g, 0xff), 8), -- green
+        bit.band(b, 0xff) -- blue
     );
 end
 
