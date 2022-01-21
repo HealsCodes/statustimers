@@ -43,6 +43,12 @@ local function get_utcstamp()
     -- the utcstamp is at offset 0x0C
     return ashita.memory.read_uint32(ptr + 0x0C);
 end
+
+-- check if the passed server_id is valid
+---@return boolean is_valid
+local function valid_server_id(server_id)
+    return server_id > 0 and server_id < 0x4000000;
+end
 -------------------------------------------------------------------------------
 -- exported functions
 -------------------------------------------------------------------------------
@@ -53,7 +59,7 @@ local module = {};
 ---@return string name the member name or nil of server id is not a party memeber
 module.get_member_name = function(server_id)
     local party = AshitaCore:GetMemoryManager():GetParty();
-    if (party == nil) then
+    if (party == nil or not valid_server_id(server_id)) then
         return nil;
     end
 
@@ -71,7 +77,7 @@ end
 ---@return table status_ids a list of the targets status ids or nil
 module.get_member_status = function(server_id)
     local party = AshitaCore:GetMemoryManager():GetParty();
-    if (party == nil) then
+    if (party == nil or not valid_server_id(server_id)) then
         return nil;
     end
 
