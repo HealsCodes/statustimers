@@ -239,7 +239,7 @@ end
 ---@param status number the id of the status effect
 ---@param duration number the remaining status duration in seconds
 ---@param size table ImVec2 with and height of the swatch
----@return true if the swatch was rendered
+---@return boolean did_render true if the swatch was rendered
 local function render_visual_aid_swatch(status, duration, size)
     if (not resources.status_has_visual_aid(status, settings)) then
         return false;

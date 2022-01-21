@@ -98,6 +98,15 @@ module.get_member_status = function(server_id)
     return nil;
 end
 
+-- check if the player "exists"
+---@return boolean player_exists true if the player object is valid
+module.is_player_valid = function()
+    if (AshitaCore:GetMemoryManager():GetParty():GetMemberServerId(0) ~= 0) then
+        return AshitaCore:GetMemoryManager():GetPlayer():GetIsZoning() == 0;
+    end
+    return false;
+end
+
 -- return name of the current target if it is a party member
 ---@return string name the targets name or nil
 module.get_target_name = function()
@@ -150,7 +159,7 @@ end
 ---@return table status_ids the player's status effects or nil if no player exists
 module.get_player_status = function()
     local player = AshitaCore:GetMemoryManager():GetPlayer();
-    if (player == nil) then
+    if (player == nil or module.is_player_valid() == false) then
         return nil;
     end
 
@@ -176,7 +185,7 @@ module.get_player_status = function()
     local status_ids = T{};
 
     for j = 0,31,1 do
-        if (icons[j + 1] ~= 255) then
+        if (icons[j + 1] ~= 255 and icons[j + 1] > 0) then
             status_ids[#status_ids+1] = T{
                 id = icons[j + 1],
                 duration = buff_duration(timers[j + 1])
