@@ -8,6 +8,8 @@ This addon provides a configurable replacement for the in-game status icons in F
   ![](https://github.com/Shirk/statustimers/blob/docs/gif/replace-system.gif?raw=true)
 - see your own status effects as well as targeted party members and sub-targets  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/target-and-subtarget.gif?raw=true)
+- lock to a specific target member to always see their status regardless of target / sub-target  
+![](https://github.com/Shirk/statustimers/blob/docs/gif/locktarget.gif?raw=true)
 - tooltips for all status effects  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/tooltips.gif?raw=true)
 - easily clear any cancellable effect with a mouse click  
@@ -25,6 +27,11 @@ This addon provides a configurable replacement for the in-game status icons in F
 - black- or whitelist filter mode to control which effects show swatches  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/settings-visual-aid-filters.gif?raw=true)
 
+### Commands:
+
+- `/statustimers` or `/stt` - open the configuration UI
+- `/lockstatus name` - set party member 'name' as locked status target
+- `/unlockstatus` - clear the current locked status target
 
 ### NOTE:
 

@@ -19,7 +19,7 @@
 
 addon.name    = 'statustimers';
 addon.author  = 'heals';
-addon.version = '4.0.901';
+addon.version = '4.0.902';
 addon.desc    = 'Replacement for the default status timer display';
 addon.link    = 'https://github.com/Shirk/statustimers';
 
@@ -28,6 +28,7 @@ addon.link    = 'https://github.com/Shirk/statustimers';
 -------------------------------------------------------------------------------
 require('common');
 local settings = require('settings');
+local chat = require('chat');
 -- local modules
 require('block_native');
 local helpers = require('helpers');
@@ -110,11 +111,22 @@ end)
 
 ashita.events.register('command', 'statustimers_command', function (e)
     local args = e.command:args();
-    if (#args == 0 or (args[1] ~= '/statustimers' and args[1] ~= '/stt')) then
+    if (#args == 0 or (args[1] ~= '/statustimers' and args[1] ~= '/stt'
+                   and args[1] ~= '/lockstatus' and args[1] ~= '/unlockstatus')) then
         return;
     end
 
     e.blocked = true;
 
-    toggle_settings();
+    if (args[1] == '/statustimers' or args[1] == '/stt') then
+        toggle_settings();
+    elseif (args[1] == '/lockstatus') then
+        if (#args == 1) then
+            print(chat.header(addon.name):append(chat.error(('/lockstatus requires a party member name'))));
+        else
+            main_ui.lock_target(args[2]);
+        end
+    elseif (args[1] == '/unlockstatus') then
+        main_ui.unlock_target();
+    end
 end)

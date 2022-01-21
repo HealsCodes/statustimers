@@ -24,6 +24,7 @@ require('common');
 
 local bit   = require('bit');
 local imgui = require('imgui');
+local chat = require('chat');
 -- local modules
 local helpers   = require('helpers');
 local resources = require('resources');
@@ -41,6 +42,7 @@ local ui = T {
     color = T {
         label = T{},
         label_bg = T{},
+        locked_border = { 1.0, 0.75, 0.55, 1.0 },
         va = T{
             _100 = T{},
             _75  = T{},
@@ -49,6 +51,7 @@ local ui = T {
         },
     },
     id_states = T{},
+    locked_target = 0,
     window_flags = T{
         current  = bit.bor(ImGuiWindowFlags_NoDecoration, ImGuiWindowFlags_AlwaysAutoResize),
         inactive = bit.bor(ImGuiWindowFlags_NoDecoration, ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_AlwaysAutoResize),
@@ -70,6 +73,13 @@ local function get_base_sizes()
     };
 end
 
+-- check the passed name is the name of the locked target
+---@param name string a player name
+---@return boolean is_lock_target if the names match
+local function is_lock_target(name)
+    return name ~= nil and name == party.get_member_name(ui.locked_target);
+end
+
 -- return the dimensions of the player status list
 ---@return table size { w, h } for the player status list
 local function player_status_size()
@@ -86,17 +96,28 @@ end
 -- return the dimensions of an arbitrary status list
 ---@param label string the targets name label or nil
 ---@param status_list table the targets status list or nil
+---@param check_lock_target boolean if true and the target is equal to the locked target return { 0, 0 }
 ---@return table size { w, h } for the targets status list
-local function target_status_size(label, status_list)
+local function target_status_size(label, status_list, check_lock_target)
+    if (check_lock_target == true and is_lock_target(label or '')) then
+        return { 0, 0 };
+    end
+
     local text_dim = { imgui.CalcTextSize(label or ''); };
+    local lock_dim = { 0, 0 };
+    if (imgui.IsWindowHovered() or is_lock_target(label or '')) then
+        -- extra padding for the lock icon
+        lock_dim = { imgui.CalcTextSize('\xef\x8f\x81'); };
+        lock_dim[1] = lock_dim[1] + ITEM_SPACING;
+    end
 
     if (status_list ~= nil) then
         return {
-            #status_list * (settings.icons.size.target + ITEM_SPACING) + text_dim[1] + 2 * ITEM_SPACING,
+            #status_list * (settings.icons.size.target + ITEM_SPACING) + text_dim[1] + 2 * ITEM_SPACING + lock_dim[1],
             math.max(settings.icons.size.target, text_dim[2]) + 2 * ITEM_SPACING
         };
     elseif (label ~= nil) then
-        return { text_dim[1] + 2 * ITEM_SPACING, text_dim[2] + 2 * ITEM_SPACING };
+        return { text_dim[1] + 2 * ITEM_SPACING + lock_dim[1], text_dim[2] + 2 * ITEM_SPACING };
     end
     return { 0, 0 };
 end
@@ -105,18 +126,20 @@ end
 ---@return table size ImVec2 containing the required window size
 local function get_window_size()
     local player_size  = player_status_size();
-    local mtarget_size = target_status_size(party.get_target_name(), party.get_target_status());
-    local starget_size = target_status_size(party.get_subtarget_name(), party.get_subtarget_status());
+    local mtarget_size = target_status_size(party.get_target_name(), party.get_target_status(), true);
+    local starget_size = target_status_size(party.get_subtarget_name(), party.get_subtarget_status(), true);
+    local ltarget_size = target_status_size(party.get_member_name(ui.locked_target), party.get_member_status(ui.locked_target));
     local spacing = 0;
 
     if (mtarget_size[1] ~= 0) then spacing = spacing + ITEM_SPACING; end
     if (starget_size[1] ~= 0) then spacing = spacing + ITEM_SPACING; end
+    if (ltarget_size[1] ~= 0) then spacing = spacing + ITEM_SPACING; end
 
     return {
         -- whichever list is widest determines the width of the window
-        math.max(player_size[1], mtarget_size[1], starget_size[1]),
+        math.max(player_size[1], mtarget_size[1], starget_size[1], ltarget_size[1]),
         -- the height of the window is always the sum of all lists
-        player_size[2] + mtarget_size[2] + starget_size[2] + ITEM_SPACING + spacing;
+        player_size[2] + mtarget_size[2] + starget_size[2] + ltarget_size[2] + ITEM_SPACING + spacing;
     };
 end
 
@@ -135,7 +158,7 @@ local function draw_rect(top_left, bot_right, color, radius, fill, flags)
         { cursor[1] + bot_right[1], cursor[2] + bot_right[2] }
     };
 
-    if (true) then
+    if (fill == nil or fill) then
         imgui.GetWindowDrawList():AddRectFilled(abs_rect[1], abs_rect[2], color_u32, radius or 0.0, flags or ImDrawCornerFlags_All);
     else
         imgui.GetWindowDrawList():AddRect(abs_rect[1], abs_rect[2], color_u32, radius or 0.0, flags or ImDrawCornerFlags_All);
@@ -180,7 +203,7 @@ end
 ---@param status number the status id
 ---@param is_target boolean if true, don't show '(right click to cancel)' hint
 local function render_tooltip(status, is_target)
-    if (status == nil or status < 0 or status > 0x3FF or status == 255) then
+    if (status == nil or status < 1 or status > 0x3FF or status == 255) then
         return;
     end
 
@@ -200,7 +223,8 @@ end
 -- render the name and status icons box for a (sub)target
 ---@param name string the target name tag or nil
 ---@param status_list table a list of status ids for the target or nil
-local function render_target_status(name, status_list)
+---@param is_locked boolean if true, render the target bar in the "lock on" style
+local function render_target_status(name, status_list, is_locked)
     if (name == nil and status_list == nil) then
         return;
     end
@@ -211,9 +235,31 @@ local function render_target_status(name, status_list)
     local corner_flags = bit.bor(ImDrawCornerFlags_BotLeft, ImDrawCornerFlags_TopRight);
 
     draw_rect(bg[1], bg[2], ui.color.label_bg, 7.0, true, corner_flags);
-    imgui.SetCursorPos({ imgui.GetCursorPosX() + ITEM_SPACING, imgui.GetCursorPosY() + ITEM_SPACING });
+    if (is_locked) then
+        draw_rect(bg[1], bg[2], ui.color.locked_border, 7.0, false, corner_flags);
+    end
 
     -- target name goes left of the icons
+    if (imgui.IsWindowHovered() or is_lock_target(name or '')) then
+        -- draw the extra icons for target lock and unlock
+        imgui.SetCursorPos({ imgui.GetCursorPosX() + 2 * ITEM_SPACING, imgui.GetCursorPosY() + ITEM_SPACING });
+
+        if (is_locked or is_lock_target(name or '')) then
+            imgui.TextColored(ui.color.locked_border, '\xef\x80\xa3'); -- lock closed
+            if (imgui.IsItemClicked()) then
+                ui.locked_target = 0;
+            end
+        else
+            imgui.Text('\xef\x8f\x81'); -- lock open
+            if (imgui.IsItemClicked()) then
+                ui.locked_target = party.get_member_id_by_name(name or '');
+            end
+        end
+        imgui.SameLine(0);
+    else
+        imgui.SetCursorPos({ imgui.GetCursorPosX() + ITEM_SPACING, imgui.GetCursorPosY() + ITEM_SPACING });
+    end
+
     imgui.TextColored(ui.color.label, name or '');
     if (status_list ~= nil and next(status_list)) then
         imgui.SameLine(0);
@@ -372,10 +418,18 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
             end
         end
 
+        -- render the locked target (if any)
+        if (ui.locked_target ~= 0) then
+            render_target_status(party.get_member_name(ui.locked_target), party.get_member_status(ui.locked_target), true);
+        end
         -- render the player's target
-        render_target_status(party.get_target_name(), party.get_target_status());
+        if (not is_lock_target(party.get_target_name())) then
+            render_target_status(party.get_target_name(), party.get_target_status());
+        end
         -- render the player's subtarget
-        render_target_status(party.get_subtarget_name(), party.get_subtarget_status());
+        if (not is_lock_target(party.get_subtarget_name())) then
+            render_target_status(party.get_subtarget_name(), party.get_subtarget_status());
+        end
 
 
         -- add the settings button if the window is being hovered
@@ -391,6 +445,20 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
         ui.window_flags.current = imgui.IsWindowHovered() and ui.window_flags.active or ui.window_flags.inactive;
     end
     imgui.End();
+end
+
+-- set the lock-on target to a named party member
+---@param name string name of the party member to lock on
+module.lock_target = function(name)
+    ui.locked_target = party.get_member_id_by_name(name);
+    if (ui.locked_target == 0) then
+        print(chat.header(addon.name):append(chat.error(('"%s" is not a party member.'):fmt(name or ''))));
+    end
+end
+
+-- clear the lock-on target
+module.unlock_target = function()
+    ui.locked_target = 0;
 end
 
 return module;

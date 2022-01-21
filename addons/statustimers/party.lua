@@ -113,6 +113,24 @@ module.is_player_valid = function()
     return false;
 end
 
+-- return the server_id of a party member by name
+---@param name string the name of the party member
+---@return number server_id the memeber's server_id or 0 if name is not valid
+module.get_member_id_by_name = function(name)
+    local party = AshitaCore:GetMemoryManager():GetParty();
+    if (party == nil or name == nil or name == '') then
+        return 0;
+    end
+
+    -- try and find a party member with a matching name
+    for i = 1,4,1 do
+        if (party:GetMemberName(i) == name) then
+            return party:GetMemberServerId(i);
+        end
+    end
+    return 0;
+end
+
 -- return name of the current target if it is a party member
 ---@return string name the targets name or nil
 module.get_target_name = function()
