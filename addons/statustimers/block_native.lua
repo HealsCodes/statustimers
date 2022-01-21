@@ -61,7 +61,7 @@ helpers.register_init('block_native_init', function()
 
     -- backup the original instructions
     handler_data[1] = ashita.memory.read_uint16(pm:Get(STATUSHANDLER1_ID));
-    handler_data[2] = ashita.memory.read_uint16(pm:Get(STATUSHANDLER1_ID));
+    handler_data[2] = ashita.memory.read_uint16(pm:Get(STATUSHANDLER2_ID));
 
     -- check if they have been modified
     if (handler_data[1] ~= 0x9090 and handler_data[2] ~= 0x9090) then
