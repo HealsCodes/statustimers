@@ -32,6 +32,12 @@ local buffs_table = nil;
 -------------------------------------------------------------------------------
 local icon_cache = T{
 };
+
+-- this table implements overrides for certain icons to handle
+-- local buffs_table = nil;
+local id_overrides = T{
+    _249 = 579
+};
 -------------------------------------------------------------------------------
 -- local functions
 -------------------------------------------------------------------------------
@@ -41,6 +47,11 @@ local icon_cache = T{
 local function load_status_icon_from_resource(status_id)
     if (status_id < 0 or status_id > 0x3FF) then
         return nil;
+    end
+
+    local id_key = ("_%d"):fmt(status_id);
+    if (id_overrides:haskey(id_key)) then
+        status_id = id_overrides[id_key];
     end
 
     local icon = AshitaCore:GetResourceManager():GetStatusIconById(status_id);
