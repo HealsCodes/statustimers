@@ -112,7 +112,8 @@ end)
 ashita.events.register('command', 'statustimers_command', function (e)
     local args = e.command:args();
     if (#args == 0 or (args[1] ~= '/statustimers' and args[1] ~= '/stt'
-                   and args[1] ~= '/lockstatus' and args[1] ~= '/unlockstatus')) then
+                   and args[1] ~= '/lockstatus' and args[1] ~= '/unlockstatus'
+                   and args[1] ~= '/dumpstatus')) then
         return;
     end
 
@@ -128,5 +129,7 @@ ashita.events.register('command', 'statustimers_command', function (e)
         end
     elseif (args[1] == '/unlockstatus') then
         main_ui.unlock_target();
+    elseif (args[1] == '/dumpstatus') then
+        main_ui.dump_status();
     end
 end)

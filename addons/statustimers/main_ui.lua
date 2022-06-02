@@ -461,4 +461,20 @@ module.unlock_target = function()
     ui.locked_target = 0;
 end
 
+-- dump the current status effects for the player and party to chat
+module.dump_status = function()
+    local player_status = party.get_player_status();
+
+    -- render the player status
+    if (player_status ~= nil) then
+        print(chat.header(addon.name):append(('player: %d active effects:'):fmt(#player_status)));
+
+        for i = 1,#player_status,1 do
+            print(chat.header(addon.name):append('-- id: %d, duration: %d'):fmt(player_status[i].id, player_status[i].duration));
+        end
+    else
+        print(chat.header(addon.name):append('player: no active effects'));
+    end
+end
+
 return module;
