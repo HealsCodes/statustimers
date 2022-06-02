@@ -189,19 +189,30 @@ module.get_player_status = function()
 
     --@param raw_duration number
     local buff_duration = function(raw_duration)
-        local vana_base_stamp = 0x3C307D70;
-        local base_offset = 572662306;
-        local timestamp = get_utcstamp();
-
         if (raw_duration == INFINITE_DURATION) then
             return -1;
         end
 
-        raw_duration = (raw_duration / 60) + base_offset + vana_base_stamp;
-        if (raw_duration > timestamp and ((raw_duration - timestamp) / 3600) <= 99) then
-            return raw_duration  - timestamp;
+        local vana_base_stamp = 0x3C307D70;
+        --get the time since vanadiel epoch
+        local offset = get_utcstamp() - vana_base_stamp;
+        --multiply it by 60 to create like terms
+        local comparand = offset * 60;
+        --emulate overflow..
+        comparand = bit.band(comparand, 0xFFFFFFFF);
+        --get actual time remaining
+        local real_duration = raw_duration - comparand;
+        --handle the triennial spillover..
+        if (real_duration < -2147483648) then
+            real_duration = real_duration + 0xFFFFFFFF;
         end
-        return 0;
+
+        if real_duration < 1 then
+            return 0;
+        else
+            --convert to seconds..
+            return math.ceil(real_duration / 60);
+        end
     end
 
     local icons = player:GetStatusIcons();
