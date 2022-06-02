@@ -26,6 +26,7 @@ local ffi = require('ffi');
 -- local state
 -------------------------------------------------------------------------------
 local d3d8_device = d3d8.get_device();
+local buffs_table = nil;
 -------------------------------------------------------------------------------
 -- local constants
 -------------------------------------------------------------------------------
@@ -201,6 +202,22 @@ module.status_has_visual_aid = function(status_id, settings)
     end
     -- random bonkers event and not sure..
     return false;
+end
+
+-- return the name for a status index from the resource table
+---@param status_id number the status id to look up
+---@return string
+module.get_status_name = function(status_id)
+    if (buffs_table == nil) then
+        -- find the correct buffs table
+        if (AshitaCore:GetResourceManager():GetString('buffs.names', 253) == 'Signet') then
+            buffs_table = 'buffs.names';
+        else
+            buffs_table = 'buffs';
+        end
+    end
+
+    return AshitaCore:GetResourceManager():GetString(buffs_table, status_id);
 end
 
 return module;

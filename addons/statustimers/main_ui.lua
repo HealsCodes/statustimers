@@ -208,7 +208,7 @@ local function render_tooltip(status, is_target)
     end
 
     local info = AshitaCore:GetResourceManager():GetStatusIconById(status);
-    local name = AshitaCore:GetResourceManager():GetString('buffs.names', status);
+    local name = resources.get_status_name(status);
     if (name ~= nil and info ~= nil) then
         imgui.BeginTooltip();
             imgui.Text(('%s (#%d)'):fmt(name, status));

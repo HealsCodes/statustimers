@@ -72,8 +72,8 @@ local function render_active_id_table(settings)
             elseif (sort_specs.Specs.ColumnIndex == 2) then
                 -- sort by Name
                 settings.visual_aid.filters.ids:sort(function(a, b)
-                    local na = AshitaCore:GetResourceManager():GetString('buffs.names', a);
-                    local nb = AshitaCore:GetResourceManager():GetString('buffs.names', b);
+                    local na = resources.get_status_name(a);
+                    local nb = resources.get_status_name(b);
 
                     if (sort_specs.Specs.SortDirection == ImGuiSortDirection_Ascending) then
                         return na < nb;
@@ -97,7 +97,7 @@ local function render_active_id_table(settings)
 
             local id = settings.visual_aid.filters.ids[i];
             local icon = resources.get_icon_from_theme(settings.icons.theme, id);
-            local label = AshitaCore:GetResourceManager():GetString('buffs.names', id) or '???';
+            local label = resources.get_status_name(id) or '???';
 
             imgui.TableNextColumn();
             imgui.Text(('#%d'):fmt(id));
@@ -209,7 +209,7 @@ module.render_config_filter_ui = function(settings, is_open)
     if (not next(ui.status_id_list)) then
         -- first time init
         for i = 0,1023,1 do
-            local status_name = AshitaCore:GetResourceManager():GetString('buffs.names', i);
+            local status_name = resources.get_status_name(i);
             if (status_name ~= nil and status_name[1] ~= '(') then
                 ui.status_id_list[#ui.status_id_list+1] = T{ id = i, name = ('%s (#%d)'):fmt(status_name, i) };
             end
