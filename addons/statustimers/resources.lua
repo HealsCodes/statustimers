@@ -22,11 +22,11 @@
 -------------------------------------------------------------------------------
 local d3d8 = require('d3d8');
 local ffi = require('ffi');
+local compat = require('compat');
 -------------------------------------------------------------------------------
 -- local state
 -------------------------------------------------------------------------------
 local d3d8_device = d3d8.get_device();
-local buffs_table = nil;
 -------------------------------------------------------------------------------
 -- local constants
 -------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ local function load_status_icon_from_resource(status_id)
     local icon = AshitaCore:GetResourceManager():GetStatusIconById(status_id);
     if (icon ~= nil) then
         local dx_texture_ptr = ffi.new('IDirect3DTexture8*[1]');
-        if (ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d8_device, icon.Bitmap, icon.ImageSize, 0xFFFFFFFF, 0xFFFFFFFF, 1, 0, ffi.C.D3DFMT_A8R8G8B8, ffi.C.D3DPOOL_MANAGED, ffi.C.D3DX_DEFAULT, ffi.C.D3DX_DEFAULT, 0xFF000000, nil, nil, dx_texture_ptr) == ffi.C.S_OK) then
+        if (ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d8_device, icon.Bitmap, compat.icon_size(icon), 0xFFFFFFFF, 0xFFFFFFFF, 1, 0, ffi.C.D3DFMT_A8R8G8B8, ffi.C.D3DPOOL_MANAGED, ffi.C.D3DX_DEFAULT, ffi.C.D3DX_DEFAULT, 0xFF000000, nil, nil, dx_texture_ptr) == ffi.C.S_OK) then
             return d3d8.gc_safe_release(ffi.cast('IDirect3DTexture8*', dx_texture_ptr[0]));
         end
     end
@@ -219,16 +219,7 @@ end
 ---@param status_id number the status id to look up
 ---@return string
 module.get_status_name = function(status_id)
-    if (buffs_table == nil) then
-        -- find the correct buffs table
-        if (AshitaCore:GetResourceManager():GetString('buffs.names', 253) == 'Signet') then
-            buffs_table = 'buffs.names';
-        else
-            buffs_table = 'buffs';
-        end
-    end
-
-    return AshitaCore:GetResourceManager():GetString(buffs_table, status_id);
+    return AshitaCore:GetResourceManager():GetString(compat.buffs_table(), status_id);
 end
 
 return module;

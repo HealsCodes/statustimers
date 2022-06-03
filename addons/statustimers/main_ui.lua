@@ -267,7 +267,7 @@ local function render_target_status(name, status_list, is_locked)
         for i = 1,#status_list,1 do
 
             local icon = resources.get_icon_from_theme(settings.icons.theme, status_list[i]);
-            imgui.Image(icon, { settings.icons.size.target, settings.icons.size.target });
+            imgui.Image(icon, { settings.icons.size.target, settings.icons.size.target }, { 1, 1 }, { 1, 1, 1, 1 }, { 0, 0, 0, 0 });
 
             if (imgui.IsItemHovered()) then
                 -- show a tooltip even for the targets status effects
@@ -373,7 +373,7 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
                     local icon_tint = { 1.0, 1.0, 1.0, ui.id_states[player_status[i].id].alpha }
 
                     imgui.SetCursorPosX(imgui.GetCursorPosX() + ((item_width - settings.icons.size.main) * 0.5));
-                    imgui.Image(icon, { settings.icons.size.main, settings.icons.size.main }, { 0, 0 }, { 1, 1 }, icon_tint);
+                    imgui.Image(icon, { settings.icons.size.main, settings.icons.size.main }, { 0, 0 }, { 1, 1 }, icon_tint, { 0, 0, 0, 0});
 
                     if (imgui.IsItemHovered()) then
                         render_tooltip(player_status[i].id, false);

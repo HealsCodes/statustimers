@@ -22,11 +22,12 @@
 -------------------------------------------------------------------------------
 require('common');
 
-local imgui = require('imgui');
+local imgui = require('compat').require_imgui();
 -- local modules
 local helpers = require('helpers');
-local resources = require('resources')
+local resources = require('resources');
 local filters_ui = require('conf_filters_ui');
+local compat = require('compat');
 -------------------------------------------------------------------------------
 -- local state
 -------------------------------------------------------------------------------
@@ -59,7 +60,7 @@ module.render_config_ui = function(settings, toggle)
 
     imgui.SetNextWindowContentSize({ 400, 525 });
 
-    if (imgui.Begin(('Statustimers v%s'):fmt(addon.version), ui.is_open, ImGuiWindowFlags_AlwaysAutoResize)) then
+    if (imgui.Begin(('Statustimers v%s %s'):fmt(addon.version, compat.state()), ui.is_open, ImGuiWindowFlags_AlwaysAutoResize)) then
         imgui.BeginGroup();
             -- icon sizes and theme
             imgui.TextColored(header_color, 'Icon Settings');
