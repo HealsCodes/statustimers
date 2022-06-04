@@ -179,6 +179,10 @@ local function track_id_state(status, duration)
             if (ui.id_states[status].alpha < 0.01 or ui.id_states[status].alpha > 1.0) then
                 ui.id_states[status].alpha_step = -ui.id_states[status].alpha_step;
             end
+        else
+            -- otherwise pin the alpha to opaque to account for refreshes etc.
+            ui.id_states[status].alpha = 1.0;
+            ui.id_states[status].alpha_step = -0.05;
         end
     end
 end
