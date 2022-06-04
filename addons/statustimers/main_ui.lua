@@ -267,7 +267,7 @@ local function render_target_status(name, status_list, is_locked)
         for i = 1,#status_list,1 do
 
             local icon = resources.get_icon_from_theme(settings.icons.theme, status_list[i]);
-            imgui.Image(icon, { settings.icons.size.target, settings.icons.size.target }, { 1, 1 }, { 1, 1, 1, 1 }, { 0, 0, 0, 0 });
+            imgui.Image(icon, { settings.icons.size.target, settings.icons.size.target }, { 0, 0 }, { 1, 1 }, { 1, 1, 1, 1 }, { 0, 0, 0, 0 });
 
             if (imgui.IsItemHovered()) then
                 -- show a tooltip even for the targets status effects
