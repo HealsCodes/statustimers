@@ -363,7 +363,7 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
 
                 -- respect hidden timers
                 if (resources.status_timer_hidden(player_status[i].id)) then
-                    label = '???';
+                    label = '--';
                 end
 
                 text_dim = { imgui.CalcTextSize(label) };
