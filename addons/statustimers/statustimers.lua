@@ -19,7 +19,7 @@
 
 addon.name    = 'statustimers';
 addon.author  = 'heals';
-addon.version = '4.0.904';
+addon.version = '4.0.905';
 addon.desc    = 'Replacement for the default status timer display';
 addon.link    = 'https://github.com/Shirk/statustimers';
 
@@ -68,6 +68,10 @@ local default_settings = T{
             mode = 'blacklist',
             ids = T{ },
         },
+    },
+
+    split_bars = T{
+        enabled = false,
     },
 };
 

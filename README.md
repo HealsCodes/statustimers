@@ -10,6 +10,8 @@ This addon provides a configurable replacement for the in-game status icons in F
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/target-and-subtarget.gif?raw=true)
 - lock to a specific target member to always see their status regardless of target / sub-target  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/locktarget.gif?raw=true)
+- show target, subtarget and locked target as part of the main window or in separate, movable windows
+![](https://github.com/Shirk/statustimers/blob/docs/gif/split-bars.gif?raw=true)
 - tooltips for all status effects  
 ![](https://github.com/Shirk/statustimers/blob/docs/gif/tooltips.gif?raw=true)
 - easily clear any cancellable effect with a mouse click  
