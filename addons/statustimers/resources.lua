@@ -41,11 +41,26 @@ local id_overrides = T{
 -------------------------------------------------------------------------------
 -- local functions
 -------------------------------------------------------------------------------
+
+-- load a dummy icon placeholder for a missing status and return a texture pointer
+---@return ffi.cdata* texture_ptr the loaded texture object or nil on error
+local function load_dummy_icon()
+    local icon_path = ('%s\\addons\\%s\\ladybug.png'):fmt(AshitaCore:GetInstallPath(), 'statustimers');
+    local dx_texture_ptr = ffi.new('IDirect3DTexture8*[1]');
+
+    if (ffi.C.D3DXCreateTextureFromFileA(d3d8_device, icon_path, dx_texture_ptr) == ffi.C.S_OK) then
+        return d3d8.gc_safe_release(ffi.cast('IDirect3DTexture8*', dx_texture_ptr[0]));
+    end
+
+    return nil;
+end
+
 -- load a status icon from the games own resources and return a texture pointer
 ---@param status_id number the status id to load the icon for
 ---@return ffi.cdata* texture_ptr the loaded texture object or nil on error
 local function load_status_icon_from_resource(status_id)
-    if (status_id < 0 or status_id > 0x3FF) then
+    if (status_id == nil or status_id < 0 or status_id > 0x3FF) then
+        print(('attempting to display status effect "%d" which is out of range 0...1023 - crashing.'):fmt(status_id));
         return nil;
     end
 
@@ -61,7 +76,7 @@ local function load_status_icon_from_resource(status_id)
             return d3d8.gc_safe_release(ffi.cast('IDirect3DTexture8*', dx_texture_ptr[0]));
         end
     end
-    return nil;
+    return load_dummy_icon();
 end
 
 -- load a status icon from a theme pack and return a texture pointer
@@ -70,6 +85,7 @@ end
 ---@return ffi.cdata* texture_ptr the loaded texture object or nil on error
 local function load_status_icon_from_theme(theme, status_id)
     if (status_id == nil or status_id < 0 or status_id > 0x3FF) then
+        print(('attempting to display status effect "%d" which is out of range 0...1023 - crashing.'):fmt(status_id));
         return nil;
     end
 
@@ -108,7 +124,7 @@ local function load_status_icon_from_theme(theme, status_id)
         end
     end
 
-    return nil;
+    return load_dummy_icon();
 end
 -------------------------------------------------------------------------------
 -- exported functions
