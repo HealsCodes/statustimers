@@ -449,6 +449,7 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
         ui.window_flags.current = imgui.IsWindowHovered() and ui.window_flags.active or ui.window_flags.inactive;
     end
     imgui.End();
+    imgui.PopStyleVar(1);
 end
 
 -- set the lock-on target to a named party member
