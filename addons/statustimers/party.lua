@@ -89,9 +89,21 @@ module.get_member_status = function(server_id)
             local status_ids = T{};
 
             for j = 0,31,1 do
-                if (icons_lo[j+1] ~= 255) then
-                    -- icons_hi holds bit 9 & 10 in a 32 entry 2bit array
-                    status_ids[#status_ids + 1] = icons_lo[j + 1] + bit.lshift(bit.band(bit.rshift(icons_hi, 2 * j), 3), 8);
+                --[[ FIXME: lua doesn't handle 64bit return values properly..
+                --   FIXME: the next lines are a workaround by Thorny that cover most but not all cases..
+                --   FIXME: .. to try and retrieve the high bits of the buff id.
+                --   TODO:  revesit this once atom0s adjusted the API.
+                --]]
+                local high_bits;
+                if j < 16 then
+                    high_bits = bit.lshift(bit.band(bit.rshift(icons_hi, 2* j), 3), 8);
+                else
+                    local buffer = math.floor(icons_hi / 0xffffffff);
+                    high_bits = bit.lshift(bit.band(bit.rshift(buffer, 2 * (j - 16)), 3), 8);
+                end
+                local buff_id = icons_lo[j+1] + high_bits;
+                if (buff_id ~= 255) then
+                    status_ids[#status_ids + 1] = buff_id;
                 end
             end
 

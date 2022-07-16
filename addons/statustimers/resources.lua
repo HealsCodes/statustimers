@@ -36,7 +36,6 @@ local icon_cache = T{
 -- this table implements overrides for certain icons to handle
 -- local buffs_table = nil;
 local id_overrides = T{
-    _249 = 579
 };
 -------------------------------------------------------------------------------
 -- local functions

@@ -73,7 +73,7 @@ module.render_config_ui = function(settings, toggle)
                 imgui.SliderInt('\xef\x81\x9b Icons', target_size, 14, 256, '%dpx');
                 imgui.ShowHelp('Size for target status icons.', true);
 
-                local combo_flags = bit.bor(ImGuiComboFlags_None);
+                local combo_flags = ImGuiComboFlags_None;
                 local theme_paths = resources.get_theme_paths();
 
                 if (imgui.BeginCombo('\xef\x97\x83 Theme', theme_paths[ui.theme_index[1] ], combo_flags)) then
