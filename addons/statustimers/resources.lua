@@ -69,7 +69,7 @@ local function load_status_icon_from_resource(status_id)
         status_id = id_overrides[id_key];
     end
 
-    local icon = AshitaCore:GetResourceManager():GetStatusIconById(status_id);
+    local icon = AshitaCore:GetResourceManager():GetStatusIconByIndex(status_id);
     if (icon ~= nil) then
         local dx_texture_ptr = ffi.new('IDirect3DTexture8*[1]');
         if (ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d8_device, icon.Bitmap, compat.icon_size(icon), 0xFFFFFFFF, 0xFFFFFFFF, 1, 0, ffi.C.D3DFMT_A8R8G8B8, ffi.C.D3DPOOL_MANAGED, ffi.C.D3DX_DEFAULT, ffi.C.D3DX_DEFAULT, 0xFF000000, nil, nil, dx_texture_ptr) == ffi.C.S_OK) then
@@ -194,7 +194,7 @@ end;
 ---@return boolean can_cancel true if the status can be cancelled
 module.status_can_be_cancelled = function(status_id)
     if (status_id ~= nil and status_id > 0 and status_id < 0x400 and status_id ~= 255) then
-        return AshitaCore:GetResourceManager():GetStatusIconById(status_id).CanCancel ~= 0;
+        return AshitaCore:GetResourceManager():GetStatusIconByIndex(status_id).CanCancel ~= 0;
     end
     return false;
 end
@@ -204,7 +204,7 @@ end
 ---@return boolean force_hide true if the timer should be hidden
 module.status_timer_hidden = function(status_id)
     if (status_id ~= nil and status_id > 0 and status_id < 0x400 and status_id ~= 255) then
-        return AshitaCore:GetResourceManager():GetStatusIconById(status_id).HideTimer ~= 0;
+        return AshitaCore:GetResourceManager():GetStatusIconByIndex(status_id).HideTimer ~= 0;
     end
     return true;
 end

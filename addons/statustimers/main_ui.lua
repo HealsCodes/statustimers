@@ -225,7 +225,7 @@ local function render_tooltip(status, is_target)
         return;
     end
 
-    local info = AshitaCore:GetResourceManager():GetStatusIconById(status);
+    local info = AshitaCore:GetResourceManager():GetStatusIconByIndex(status);
     local name = resources.get_status_name(status);
     if (name ~= nil and info ~= nil) then
         imgui.BeginTooltip();

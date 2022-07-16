@@ -87,7 +87,7 @@ if (compat_checks_done == false) then
     end
 
     -- check for unadjusted icon sizes
-    local icon = AshitaCore:GetResourceManager():GetStatusIconById(0);
+    local icon = AshitaCore:GetResourceManager():GetStatusIconByIndex(0);
     if (icon.ImageSize == 4153) then
         -- stock icon size is 4167 bytes
         compat_flags.icon_sizes = true
