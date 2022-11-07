@@ -483,7 +483,9 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
 
         -- add the settings button if the window is being hovered
         if (imgui.IsWindowHovered() and settings_clicked ~= nil) then
-            imgui.SetCursorPos({ imgui.GetWindowWidth() - 25, imgui.GetWindowHeight() - 25 });
+            if get_window_size()[1] ~= 0 then
+                imgui.SetCursorPos({ imgui.GetWindowWidth() - 25, imgui.GetWindowHeight() - 25 });
+            end
             imgui.Button('\xef\x82\xad', { 20, 20 });
             if (imgui.IsItemClicked()) then
                 settings_clicked();
