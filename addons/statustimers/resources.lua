@@ -96,7 +96,7 @@ local function load_status_icon_from_theme(theme, status_id)
         end
 
         supports_alpha = ext == '.png';
-        icon_path = ('%s\\addons\\%s\\themes\\%s\\%3d'):append(ext):fmt(AshitaCore:GetInstallPath(), 'statustimers', theme, status_id);
+        icon_path = ('%s\\addons\\%s\\themes\\%s\\%d'):append(ext):fmt(AshitaCore:GetInstallPath(), 'statustimers', theme, status_id);
         local handle = io.open(icon_path, 'r');
         if (handle ~= nil) then
             handle.close();
