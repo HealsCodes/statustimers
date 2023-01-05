@@ -39,6 +39,7 @@ local ITEM_SPACING = 3;
 local settings = T {};
 local ui = T {
     is_open = T{ true, },
+    im_window = false,
     color = T {
         label = T{},
         label_bg = T{},
@@ -68,13 +69,41 @@ local ui = T {
 -------------------------------------------------------------------------------
 -- local functions
 -------------------------------------------------------------------------------
+-- return the ITEM_SPACING constant with applied UI scale factor
+---@return number the value for ITEM_SPACING taking the UI scale into account
+local function item_spacing()
+    return ITEM_SPACING * settings.ui_scale;
+end
+
+-- return a imgui.CalcTextSize(text) applying UI scaling if needed
+---@return table { text_dim.x, text_dim.y } 
+local function calc_text_size(text)
+    local text_dim = { imgui.CalcTextSize(text) };
+    if(ui.im_window == false) then
+        text_dim = { text_dim[1] * settings.ui_scale, text_dim[2] * settings.ui_scale };
+    end
+    return text_dim;
+end
+
+-- return the icon size for the main ui
+---@return number The configured main icon size with UI scaling applied
+local function icon_size_main()
+    return settings.icons.size.main * settings.ui_scale;
+end
+
+-- return the icon size for the target ui
+---@return number The configured target icon size with UI scaling applied
+local function icon_size_target()
+    return settings.icons.size.target * settings.ui_scale;
+end
+
 -- return the fixed item width as well as the max label dimensions
 ---@return table sizes { item_width_main, item_width_target, { text_dim.x, text_dim.y } }
 local function get_base_sizes()
-    local text_dim = { imgui.CalcTextSize('WWW') };
+    local text_dim = calc_text_size('WWW');
     return T{ 
-        math.max(text_dim[1], settings.icons.size.main ),
-        math.max(text_dim[1], settings.icons.size.target ),
+        math.max(text_dim[1], icon_size_main()),
+        math.max(text_dim[1], icon_size_target()),
         text_dim
     };
 end
@@ -94,7 +123,7 @@ local function player_status_size()
     local va_multiplier = settings.visual_aid.enabled and 2 or 1;
 
     if (status ~= nil) then
-        return { #status * (item_width + ITEM_SPACING), item_width + ITEM_SPACING + text_dim[2] * va_multiplier };
+        return { #status * (item_width + item_spacing()), item_width + item_spacing() + text_dim[2] * va_multiplier };
     end
     return { 0, 0 };
 end
@@ -109,21 +138,21 @@ local function target_status_size(label, status_list, check_lock_target)
         return { 0, 0 };
     end
 
-    local text_dim = { imgui.CalcTextSize(label or ''); };
+    local text_dim = calc_text_size(label or '');
     local lock_dim = { 0, 0 };
     if (imgui.IsWindowHovered() or is_lock_target(label or '')) then
         -- extra padding for the lock icon
-        lock_dim = { imgui.CalcTextSize('\xef\x8f\x81'); };
-        lock_dim[1] = lock_dim[1] + ITEM_SPACING;
+        lock_dim = calc_text_size('\xef\x8f\x81');
+        lock_dim[1] = lock_dim[1] + item_spacing();
     end
 
     if (status_list ~= nil) then
         return {
-            #status_list * (settings.icons.size.target + ITEM_SPACING) + text_dim[1] + 2 * ITEM_SPACING + lock_dim[1],
-            math.max(settings.icons.size.target, text_dim[2]) + 2 * ITEM_SPACING
+            #status_list * (icon_size_target() + item_spacing()) + text_dim[1] + 2 * item_spacing() + lock_dim[1],
+            math.max(icon_size_target(), text_dim[2]) + 2 * item_spacing()
         };
     elseif (label ~= nil) then
-        return { text_dim[1] + 2 * ITEM_SPACING + lock_dim[1], text_dim[2] + 2 * ITEM_SPACING };
+        return { text_dim[1] + 2 * item_spacing() + lock_dim[1], text_dim[2] + 2 * item_spacing() };
     end
     return { 0, 0 };
 end
@@ -141,19 +170,19 @@ local function get_window_size()
         -- split bars cuts the size of the main bar down considerably
         return {
             player_size[1],
-            player_size[2] + ITEM_SPACING;
+            player_size[2] + item_spacing();
         };
     end
 
-    if (mtarget_size[1] ~= 0) then spacing = spacing + ITEM_SPACING; end
-    if (starget_size[1] ~= 0) then spacing = spacing + ITEM_SPACING; end
-    if (ltarget_size[1] ~= 0) then spacing = spacing + ITEM_SPACING; end
+    if (mtarget_size[1] ~= 0) then spacing = spacing + item_spacing(); end
+    if (starget_size[1] ~= 0) then spacing = spacing + item_spacing(); end
+    if (ltarget_size[1] ~= 0) then spacing = spacing + item_spacing(); end
 
     return {
         -- whichever list is widest determines the width of the window
         math.max(player_size[1], mtarget_size[1], starget_size[1], ltarget_size[1]),
         -- the height of the window is always the sum of all lists
-        player_size[2] + mtarget_size[2] + starget_size[2] + ltarget_size[2] + ITEM_SPACING + spacing;
+        player_size[2] + mtarget_size[2] + starget_size[2] + ltarget_size[2] + item_spacing() + spacing;
     };
 end
 
@@ -260,7 +289,7 @@ local function render_target_status(name, status_list, is_locked)
     -- target name goes left of the icons
     if (imgui.IsWindowHovered() or is_lock_target(name or '')) then
         -- draw the extra icons for target lock and unlock
-        imgui.SetCursorPos({ imgui.GetCursorPosX() + 2 * ITEM_SPACING, imgui.GetCursorPosY() + ITEM_SPACING });
+        imgui.SetCursorPos({ imgui.GetCursorPosX() + 2 * item_spacing(), imgui.GetCursorPosY() + item_spacing() });
 
         if (is_locked or is_lock_target(name or '')) then
             imgui.TextColored(ui.color.locked_border, '\xef\x80\xa3'); -- lock closed
@@ -275,7 +304,7 @@ local function render_target_status(name, status_list, is_locked)
         end
         imgui.SameLine(0);
     else
-        imgui.SetCursorPos({ imgui.GetCursorPosX() + ITEM_SPACING, imgui.GetCursorPosY() + ITEM_SPACING });
+        imgui.SetCursorPos({ imgui.GetCursorPosX() + item_spacing(), imgui.GetCursorPosY() + item_spacing() });
     end
 
     imgui.TextColored(ui.color.label, name or '');
@@ -285,7 +314,7 @@ local function render_target_status(name, status_list, is_locked)
         for i = 1,#status_list,1 do
 
             local icon = resources.get_icon_from_theme(settings.icons.theme, status_list[i]);
-            imgui.Image(icon, { settings.icons.size.target, settings.icons.size.target }, { 0, 0 }, { 1, 1 }, { 1, 1, 1, 1 }, { 0, 0, 0, 0 });
+            imgui.Image(icon, { icon_size_target(), icon_size_target() }, { 0, 0 }, { 1, 1 }, { 1, 1, 1, 1 }, { 0, 0, 0, 0 });
 
             if (imgui.IsItemHovered()) then
                 -- show a tooltip even for the targets status effects
@@ -345,24 +374,30 @@ local function render_split_bar(split_bar_id, name, status_list, is_locked)
         return;
     end
 
+    ui.im_window = false;
     local window_size = target_status_size(name, status_list);
     if (not is_locked) then
         -- windows form target and subtarget are slightly wider to accomodate
         -- for the hover-lock icon
-        lock_dim = { imgui.CalcTextSize('\xef\x8f\x81'); };
-        window_size = { window_size[1] + lock_dim[1] + ITEM_SPACING, window_size[2] }
+        lock_dim = calc_text_size('\xef\x8f\x81');
+        window_size = { window_size[1] + lock_dim[1] + item_spacing(), window_size[2] }
     end
 
-    imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, {ITEM_SPACING, ITEM_SPACING});
+    imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, {item_spacing(), item_spacing()});
     imgui.SetNextWindowBgAlpha(0.45);
     imgui.SetNextWindowContentSize(window_size);
+
     if (imgui.Begin('st_' + split_bar_id, ui.is_open, ui.split_bars[split_bar_id])) then
+        ui.im_window = true;
+        imgui.SetWindowFontScale(settings.ui_scale);
         render_target_status(name, status_list, is_locked);
         -- update the window state for the next draw
         ui.split_bars[split_bar_id] = imgui.IsWindowHovered() and ui.window_flags.active or ui.window_flags.inactive;
     end
+    imgui.SetWindowFontScale(1.0);
     imgui.End();
     imgui.PopStyleVar(1);
+    ui.im_window = false;
 end
 
 -------------------------------------------------------------------------------
@@ -388,19 +423,23 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
     ui.color.va._50   = helpers.color_u32_to_v4(settings.visual_aid.color50);
     ui.color.va._25   = helpers.color_u32_to_v4(settings.visual_aid.color25);
 
-    imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, {ITEM_SPACING, ITEM_SPACING});
+    ui.im_window = false;
+    imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, {item_spacing(), item_spacing()});
 
     imgui.SetNextWindowBgAlpha(0.45);
     imgui.SetNextWindowContentSize(get_window_size());
 
     if (imgui.Begin('st_ui', ui.is_open, ui.window_flags.current)) then
+        imgui.SetWindowFontScale(settings.ui_scale);
+
+        ui.im_window = true;
         local item_width, _, text_dim = get_base_sizes():unpack();
         local player_status = party.get_player_status();
 
         -- render the player status
         if (player_status ~= nil) then
             local add_dummy_swatch_spacer = settings.visual_aid.enabled;
-            local swatch_size = { item_width, text_dim[2] - ITEM_SPACING };
+            local swatch_size = { item_width, text_dim[2] - item_spacing() };
 
             for i = 1,#player_status,1 do
                 -- run the bookkeeping for duration and fade states
@@ -414,29 +453,29 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
                     label = '--';
                 end
 
-                text_dim = { imgui.CalcTextSize(label) };
+                text_dim = calc_text_size(label);
 
                 --imgui.PushItemWidth(16);
                 imgui.BeginGroup();
                     local icon_tint = { 1.0, 1.0, 1.0, ui.id_states[player_status[i].id].alpha }
 
-                    imgui.SetCursorPosX(imgui.GetCursorPosX() + ((item_width - settings.icons.size.main) * 0.5));
-                    imgui.Image(icon, { settings.icons.size.main, settings.icons.size.main }, { 0, 0 }, { 1, 1 }, icon_tint, { 0, 0, 0, 0});
+                    imgui.SetCursorPosX(imgui.GetCursorPosX() + ((item_width - icon_size_main()) * 0.5));
+                    imgui.Image(icon, { icon_size_main(), icon_size_main() }, { 0, 0 }, { 1, 1 }, icon_tint, { 0, 0, 0, 0});
 
                     if (imgui.IsItemHovered()) then
                         render_tooltip(player_status[i].id, false);
                     end
 
                     -- this dummy is essential for correct resizing as it always has the actual item_width
-                    imgui.Dummy({ item_width + ITEM_SPACING, 1 });
+                    imgui.Dummy({ item_width + item_spacing(), 1 });
 
                     if (i == 1) then
                         -- first item also draws the background for the whole row
-                        local bg = { { -ITEM_SPACING, -ITEM_SPACING * 0.5 }, { player_status_size()[1], text_dim[2] } };
+                        local bg = { { -item_spacing(), -item_spacing() * 0.5 }, { player_status_size()[1], text_dim[2] } };
 
                         if (settings.visual_aid.enabled) then
                             -- visual aid adds another row below the timers
-                            bg[2][2] = bg[2][2] + text_dim[2] + ITEM_SPACING;
+                            bg[2][2] = bg[2][2] + text_dim[2] + item_spacing();
                         end
                         draw_rect(bg[1], bg[2], ui.color.label_bg, 7.0);
                     end
@@ -484,9 +523,10 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
         -- add the settings button if the window is being hovered
         if (imgui.IsWindowHovered() and settings_clicked ~= nil) then
             if get_window_size()[1] ~= 0 then
-                imgui.SetCursorPos({ imgui.GetWindowWidth() - 25, imgui.GetWindowHeight() - 25 });
+                imgui.SetCursorPos({ imgui.GetWindowWidth() - 25 * settings.ui_scale, 
+                                     imgui.GetWindowHeight() - 25 * settings.ui_scale });
             end
-            imgui.Button('\xef\x82\xad', { 20, 20 });
+            imgui.Button('\xef\x82\xad', { 20 * settings.ui_scale, 20 * settings.ui_scale });
             if (imgui.IsItemClicked()) then
                 settings_clicked();
             end
@@ -495,8 +535,10 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
         -- update the window state for the next draw
         ui.window_flags.current = imgui.IsWindowHovered() and ui.window_flags.active or ui.window_flags.inactive;
     end
+    imgui.SetWindowFontScale(1.0);
     imgui.End();
     imgui.PopStyleVar(1);
+    ui.im_window = false;
 
     -- if split bars are active render them after the main window
     if (settings.split_bars.enabled == true) then

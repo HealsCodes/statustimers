@@ -36,6 +36,7 @@ local ui = T {
     is_filters_open = T { false, },
     -- main config ui
     theme_index = T{ resources.get_theme_index('-default-') },
+    ui_scale = 1.0
 };
 -------------------------------------------------------------------------------
 -- exported functions
@@ -49,6 +50,7 @@ module.render_config_ui = function(settings, toggle)
     if (toggle) then
         ui.is_open[1] = not ui.is_open[1];
         ui.theme_index[1] = resources.get_theme_index(settings.icons.theme) or resources.get_theme_index('-default-');
+        ui.ui_scale = settings.ui_scale;
     end
 
     if (not ui.is_open[1]) then
@@ -57,14 +59,17 @@ module.render_config_ui = function(settings, toggle)
 
     local c = { 0, 0, 0, 0 };
     local header_color = { 1.0, 0.75, 0.55, 1.0 };
+    local scale_w = math.max(1.0, ui.ui_scale * 1.0);
+    local scale_h = math.max(1.0, ui.ui_scale * 0.74);
 
-    imgui.SetNextWindowContentSize({ 400, 580 });
+    imgui.SetNextWindowContentSize({ 400 * scale_w, 610 * scale_h });
 
     if (imgui.Begin(('Statustimers v%s %s'):fmt(addon.version, compat.state()), ui.is_open, ImGuiWindowFlags_AlwaysAutoResize)) then
+        imgui.SetWindowFontScale(ui.ui_scale);
         imgui.BeginGroup();
             -- icon sizes and theme
             imgui.TextColored(header_color, 'Icon Settings');
-            imgui.BeginChild('conf_icons', { 0, 90 }, true);
+            imgui.BeginChild('conf_icons', { 0 * scale_w, 90 * scale_h }, true);
                 local main_size = T{ settings.icons.size.main };
                 local target_size = T{ settings.icons.size.target };
 
@@ -76,7 +81,7 @@ module.render_config_ui = function(settings, toggle)
                 local combo_flags = ImGuiComboFlags_None;
                 local theme_paths = resources.get_theme_paths();
 
-                if (imgui.BeginCombo('\xef\x97\x83 Theme', theme_paths[ui.theme_index[1] ], combo_flags)) then
+                if (imgui.BeginCombo('\xef\x97\x83 Theme', theme_paths[ui.theme_index[1]], combo_flags)) then
                     for i = 1,#theme_paths,1 do
                         local is_selected = i == ui.theme_index[1];
 
@@ -101,7 +106,7 @@ module.render_config_ui = function(settings, toggle)
 
             -- font and background colours
             imgui.TextColored(header_color, 'Font Settings');
-            imgui.BeginChild('conf_font', { 0, 60 }, true);
+            imgui.BeginChild('conf_font', { 0 * scale_w, 85 * scale_h }, true);
                 c = helpers.color_u32_to_v4(settings.font.color);
                 if (imgui.ColorEdit4('\xef\x94\xbf Colour', c)) then
                     settings.font.color = helpers.color_v4_to_u32(c);
@@ -113,6 +118,14 @@ module.render_config_ui = function(settings, toggle)
                     settings.font.background = helpers.color_v4_to_u32(c);
                 end
                 imgui.ShowHelp('Timer background colour.', true);
+
+                local ui_scale = T{ settings.ui_scale };
+                imgui.SliderFloat('\xef\x86\xae UI Scale', ui_scale, 1.0, 4.0, '%.1fx');
+                settings.ui_scale = ui_scale[1];
+                if (not imgui.IsItemActive()) then
+                    ui.ui_scale = settings.ui_scale;
+                end
+                imgui.ShowHelp('UI scaling factor (for use with HiDPI screens/4k/...).', true);
             imgui.EndChild();
 
             -- visual toggle and colour blocks
@@ -120,14 +133,14 @@ module.render_config_ui = function(settings, toggle)
             imgui.ShowHelp('Visual Aid shows a coloured swatch below each status effect.\n' ..
                                 'The colour is based the remaining duration in seconds and fully configurable.\n');
 
-            imgui.BeginChild('conf_va', { 0, 300 }, true)
+            imgui.BeginChild('conf_va', { 0 * scale_w, 300 * scale_h }, true)
                 if (imgui.Checkbox('Enabled?', { settings.visual_aid.enabled })) then
                     settings.visual_aid.enabled = not settings.visual_aid.enabled;
                 end
                 imgui.ShowHelp('Show visual aid swatches.');
 
                 imgui.TextColored(header_color, 'Thresholds');
-                imgui.BeginChild('conf_va_threshold', { 0, 85 }, true)
+                imgui.BeginChild('conf_va_threshold', { 0 * settings.ui_scale, 85 * settings.ui_scale }, true)
                     imgui.PushID('T#1');
                     imgui.InputInt(' ', settings.visual_aid.thresholds.t75);
                     imgui.PopID();
@@ -151,7 +164,7 @@ module.render_config_ui = function(settings, toggle)
                 imgui.EndChild();
 
                 imgui.TextColored(header_color, 'Colours');
-                imgui.BeginChild('conf_va_colours', { 0, 110 }, true)
+                imgui.BeginChild('conf_va_colours', { 0 * scale_w, 110 * scale_h }, true)
                     c = helpers.color_u32_to_v4(settings.visual_aid.color100);
                     if (imgui.ColorEdit4(('\xef\x80\x97 > T1 (%ds)'):format(settings.visual_aid.thresholds.t75[1]), c)) then
                         settings.visual_aid.color100 = helpers.color_v4_to_u32(c);
@@ -185,14 +198,14 @@ module.render_config_ui = function(settings, toggle)
 
             -- miscelanious settings
             imgui.TextColored(header_color, 'Misc.');
-            imgui.BeginChild('conf_misc', { 0, 38 }, true)
+            imgui.BeginChild('conf_misc', { 0 * scale_w, 38 * scale_h }, true)
                 if (imgui.Checkbox('Movable target/subtarget bars?', { settings.split_bars.enabled })) then
                     settings.split_bars.enabled = not settings.split_bars.enabled;
                 end
                 imgui.ShowHelp('Detach target, subtarget and locked target from the main UI.');
             imgui.EndChild();
 
-            imgui.TextDisabled(('\xef\x87\xb9 2022 by %s - %s'):fmt(addon.author, addon.link));
+            imgui.TextDisabled(('\xef\x87\xb9 2023 by %s - %s'):fmt(addon.author, addon.link));
         imgui.EndGroup();
     end
     imgui.End();
