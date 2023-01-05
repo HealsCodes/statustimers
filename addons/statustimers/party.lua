@@ -29,7 +29,7 @@ local helpers = require('helpers');
 -- local constants
 -------------------------------------------------------------------------------
 local INFINITE_DURATION = 0x7FFFFFFF;
-local REALUTCSTAMP_ID = 'statustimers:realutcstamp';
+local REALUTCSTAMP_ID = ('%s:realutcstamp'):fmt(addon.name);
 -------------------------------------------------------------------------------
 -- local functions
 -------------------------------------------------------------------------------

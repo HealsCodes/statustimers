@@ -24,8 +24,8 @@ local helpers = require('helpers');
 -------------------------------------------------------------------------------
 -- local constants
 -------------------------------------------------------------------------------
-local STATUSHANDLER1_ID = 'statustimers:statushandler_1';
-local STATUSHANDLER2_ID = 'statustimers:statushandler_2';
+local STATUSHANDLER1_ID = ('%s:statushandler_1'):fmt(addon.name);
+local STATUSHANDLER2_ID = ('%s:statushandler_2'):fmt(addon.name);
 -------------------------------------------------------------------------------
 -- local state
 -------------------------------------------------------------------------------
