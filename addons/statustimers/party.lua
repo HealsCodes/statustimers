@@ -29,14 +29,21 @@ local helpers = require('helpers');
 -- local constants
 -------------------------------------------------------------------------------
 local INFINITE_DURATION = 0x7FFFFFFF;
-local REALUTCSTAMP_ID = ('%s:realutcstamp'):fmt(addon.name);
+-------------------------------------------------------------------------------
+-- local state
+-------------------------------------------------------------------------------
+local real_utcstamp_pointer = nil;
 -------------------------------------------------------------------------------
 -- local functions
 -------------------------------------------------------------------------------
 -- return the utc timestamp the game is using.
 ---@return number timestamp the game's UTC timestamp
 local function get_utcstamp()
-    local ptr = AshitaCore:GetPointerManager():Get(REALUTCSTAMP_ID);
+    local ptr = real_utcstamp_pointer;
+    if (ptr == 0) then
+        return INFINITE_DURATION;
+    end
+
     -- double dereference the pointer to get the correct address
     ptr = ashita.memory.read_uint32(ptr);
     ptr = ashita.memory.read_uint32(ptr);
@@ -246,21 +253,15 @@ module.get_player_status = function()
 end
 
 helpers.register_init('party_init', function()
-    local pm = AshitaCore:GetPointerManager();
-    if (pm:Get(REALUTCSTAMP_ID) == 0) then
-        pm:Add(REALUTCSTAMP_ID, 'FFXiMain.dll', '8B0D????????8B410C8B49108D04808D04808D04808D04C1C3', 2, 0);
-        if (pm:Get(REALUTCSTAMP_ID) == 0) then
-            return false;
-        end
+    real_utcstamp_pointer = ashita.memory.find('FFXiMain.dll', 0, '8B0D????????8B410C8B49108D04808D04808D04808D04C1C3', 2, 0);
+    print('scan for utc-stamp: ' .. real_utcstamp_pointer);
+    if (real_utcstamp_pointer == 0) then
+        return false;
     end
     return true;
 end);
 
 helpers.register_cleanup('party_cleanup', function()
-    local pm = AshitaCore:GetPointerManager();
-    if (pm:Get(REALUTCSTAMP_ID) ~= 0) then
-        pm:Delete(REALUTCSTAMP_ID);
-    end
     return true;
 end);
 
