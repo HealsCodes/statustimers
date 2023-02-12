@@ -54,6 +54,7 @@ end
 -- check if the passed server_id is valid
 ---@return boolean is_valid
 local function valid_server_id(server_id)
+    -- TODO: test with (server_id & 0x0x1000000) == 0, anything below is not an NPC
     return server_id > 0 and server_id < 0x4000000;
 end
 -------------------------------------------------------------------------------
@@ -71,7 +72,7 @@ module.get_member_name = function(server_id)
     end
 
     -- try and find a party member with a matching server id
-    for i = 1,4,1 do
+    for i = 1,5,1 do
         if (party:GetMemberServerId(i) == server_id) then
             return party:GetMemberName(i);
         end
@@ -142,7 +143,7 @@ module.get_member_id_by_name = function(name)
     end
 
     -- try and find a party member with a matching name
-    for i = 1,4,1 do
+    for i = 1,5,1 do
         if (party:GetMemberName(i) == name) then
             return party:GetMemberServerId(i);
         end
