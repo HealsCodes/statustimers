@@ -255,7 +255,6 @@ end
 
 helpers.register_init('party_init', function()
     real_utcstamp_pointer = ashita.memory.find('FFXiMain.dll', 0, '8B0D????????8B410C8B49108D04808D04808D04808D04C1C3', 2, 0);
-    print('scan for utc-stamp: ' .. real_utcstamp_pointer);
     if (real_utcstamp_pointer == 0) then
         return false;
     end
