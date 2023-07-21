@@ -218,12 +218,10 @@ module.get_player_status = function()
         local offset = get_utcstamp() - vana_base_stamp;
         --multiply it by 60 to create like terms
         local comparand = offset * 60;
-        --emulate overflow..
-        comparand = bit.band(comparand, 0xFFFFFFFF);
         --get actual time remaining
         local real_duration = raw_duration - comparand;
         --handle the triennial spillover..
-        if (real_duration < -2147483648) then
+        while (real_duration < -2147483648) do
             real_duration = real_duration + 0xFFFFFFFF;
         end
 
