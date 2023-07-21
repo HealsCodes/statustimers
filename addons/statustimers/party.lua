@@ -90,35 +90,26 @@ module.get_member_status = function(server_id)
     end
 
     -- try and find a party member with a matching server id
+    local base_ptr = AshitaCore:GetPointerManager():Get('party.statusicons');
+    base_ptr = ashita.memory.read_uint32(base_ptr);
     for i = 0,4,1 do
-        if (party:GetStatusIconsServerId(i) == server_id) then
-            local icons_lo = party:GetStatusIcons(i);
-            local icons_hi = party:GetStatusIconsBitMask(i);
+        local member_ptr = base_ptr + (0x30 * i);
+        local player_id = ashita.memory.read_uint32(member_ptr);
+        if (player_id == server_id) then
             local status_ids = T{};
 
             for j = 0,31,1 do
-                --[[ FIXME: lua doesn't handle 64bit return values properly..
-                --   FIXME: the next lines are a workaround by Thorny that cover most but not all cases..
-                --   FIXME: .. to try and retrieve the high bits of the buff id.
-                --   TODO:  revesit this once atom0s adjusted the API.
-                --]]
-                local high_bits;
-                if j < 16 then
-                    high_bits = bit.lshift(bit.band(bit.rshift(icons_hi, 2* j), 3), 8);
-                else
-                    local buffer = math.floor(icons_hi / 0xffffffff);
-                    high_bits = bit.lshift(bit.band(bit.rshift(buffer, 2 * (j - 16)), 3), 8);
-                end
-                local buff_id = icons_lo[j+1] + high_bits;
+                local high_bits = ashita.memory.read_uint8(member_ptr + 8 + (math.floor(j / 4)));
+                local f_mod = math.fmod(j, 4) * 2;
+                high_bits = bit.lshift(bit.band(bit.rshift(high_bits, f_mod), 0x03), 8);
+                local low_bits = ashita.memory.read_uint8(member_ptr + 16 + j);
+                local buff_id = high_bits + low_bits;
                 if (buff_id ~= 255) then
                     status_ids[#status_ids + 1] = buff_id;
                 end
             end
 
-            if (next(status_ids)) then
-                return status_ids;
-            end
-            break;
+            return status_ids;
         end
     end
     return nil;
