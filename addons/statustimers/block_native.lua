@@ -28,9 +28,9 @@ local helpers = require('helpers');
 -------------------------------------------------------------------------------
 -- local state
 -------------------------------------------------------------------------------
-local handler_data = T {
-    pointer = nil,
-    opcodes = nil,
+local handler_data = T { 
+    pointer = T{ nil, nil },
+    opcodes = T{ 0x0000, 0x0000 }
 };
 -------------------------------------------------------------------------------
 -- exported functions
@@ -38,36 +38,44 @@ local handler_data = T {
 local module = {};
 
 helpers.register_init('block_native_init', function()
-    -- Locate the client function used to render status icons..
-    handler_data.pointer = ashita.memory.find('FFXiMain.dll', 0, '8BF885FF0F84????????5368', 4, 0);
-    if (handler_data.pointer == 0) then
+    handler_data.pointer[1] = ashita.memory.find('FFXiMain.dll', 0, '75??55518B0D????????E8????????85C07F??8BDE', 0, 0);
+    handler_data.pointer[2] = ashita.memory.find('FFXiMain.dll', 0, '75??55518B0D????????E8????????85C07F??8BDE', 0, 1);
+
+    if (handler_data.pointer[1] == 0 or handler_data.pointer[2] == 0) then
         return false;
     end
 
-    -- Backup the original jump opcode..
-    handler_data.opcodes = ashita.memory.read_array(handler_data.pointer, 6);
-
-    -- Patch the jump if it is not already patched..
-    if (handler_data.opcodes[1] == 0x0F) then
-        -- Rebuild the jump instruction..
-        local jmp = T{ 0xE9, handler_data.opcodes[3], handler_data.opcodes[4], handler_data.opcodes[5], handler_data.opcodes[6], 0x90, };
-        jmp[2] = jmp[2] + 1;
-
-        -- Patch the client function..
-        ashita.memory.write_array(handler_data.pointer, jmp);
-        return true;
+    if (handler_data.pointer[1] == handler_data.pointer[2]) then
+        return false;
     end
 
+    -- backup the original instructions
+    handler_data.opcodes[1] = ashita.memory.read_uint16(handler_data.pointer[1]);
+    handler_data.opcodes[2] = ashita.memory.read_uint16(handler_data.pointer[2]);
+
+    -- check if they have been modified
+    if (handler_data.opcodes[1] ~= 0x9090 and handler_data.opcodes[2] ~= 0x9090) then
+        -- NOP out the branch that draws the native status icons
+        ashita.memory.write_uint16(handler_data.pointer[1], 0x9090);
+        ashita.memory.write_uint16(handler_data.pointer[2], 0x9090);
+        return true;
+    end
     return false;
+--]]
 end);
 
 helpers.register_cleanup('block_native_cleanup', function()
-    -- Restore the original client function..
-    if (handler_data.pointer ~= nil and handler_data.opcodes ~= nil) then
-        ashita.memory.write_array(handler_data.pointer, handler_data.opcodes);
+    -- revert the NOPs to the original instructions
+    if (handler_data.pointer[1] ~= 0) then
+        if (handler_data.opcodes[1] ~= 0x0000) then
+            ashita.memory.write_uint16(handler_data.pointer[1], handler_data.opcodes[1]);
+        end
+    end
 
-        handler_data.pointer = nil;
-        handler_data.opcodes = nil;
+    if (handler_data.pointer[2] ~= 0) then
+        if (handler_data.opcodes[2] ~= 0x0000) then
+            ashita.memory.write_uint16(handler_data.pointer[2], handler_data.opcodes[2]);
+        end
     end
 
     return true;
