@@ -633,7 +633,7 @@ module.dump_status = function()
     end
 end
 
-module.register_init('main_ui_init', function()
+helpers.register_init('main_ui_init', function()
     game_menu_ptr = ashita.memory.find('FFXiMain.dll', 0, "8B480C85C974??8B510885D274??3B05", 16, 0);
     if (game_menu_ptr == 0) then
         return false;
