@@ -188,12 +188,6 @@ module.render_config_ui = function(settings, toggle)
                         settings.visual_aid.color25 = helpers.color_v4_to_u32(c);
                     end
                     imgui.ShowHelp('Aid colour with less than T3 seconds remaining.', true);
-
-                    c = helpers.color_u32_to_v4(settings.menu_target.outline_color);
-                    if (imgui.ColorEdit4(('\xef\x81\x9b Icon Outline'), c)) then
-                        settings.menu_target.outline_color = helpers.color_v4_to_u32(c);
-                    end
-                    imgui.ShowHelp('Status target outline colour.', true);
                 imgui.EndChild();
                 if (imgui.Button('Filter Settings')) then
                     ui.is_filters_open[1] = true;
@@ -209,6 +203,11 @@ module.render_config_ui = function(settings, toggle)
                     settings.split_bars.enabled = not settings.split_bars.enabled;
                 end
                 imgui.ShowHelp('Detach target, subtarget and locked target from the main UI.');
+
+                if (imgui.Checkbox('Outline keyboard selection', { settings.menu_target.enabled })) then
+                    settings.menu_target.enabled = not settings.menu_target.enabled;
+                end
+                imgui.ShowHelp('Outline the status effect that has keyboard focus');
             imgui.EndChild();
 
             imgui.TextDisabled(('\xef\x87\xb9 2023 by %s - %s'):fmt(addon.author, addon.link));

@@ -47,7 +47,7 @@ local default_settings = T{
     },
 
     menu_target = T{
-        outline_color = 0xFFFFFF33,
+        enabled = true,
     },
 
     font = T{

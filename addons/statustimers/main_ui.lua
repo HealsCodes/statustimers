@@ -50,7 +50,6 @@ local ui = T {
             _50  = T{},
             _25  = T{},
         },
-        menu_target_outline = T{},
     },
     id_states = T{},
     locked_target = 0,
@@ -423,7 +422,6 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
     ui.color.va._75   = helpers.color_u32_to_v4(settings.visual_aid.color75);
     ui.color.va._50   = helpers.color_u32_to_v4(settings.visual_aid.color50);
     ui.color.va._25   = helpers.color_u32_to_v4(settings.visual_aid.color25);
-    ui.color.menu_target_outline   = helpers.color_u32_to_v4(settings.menu_target.outline_color);
 
     ui.im_window = false;
     imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, {item_spacing(), item_spacing()});
@@ -464,9 +462,9 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
                     local icon_tint = { 1.0, 1.0, 1.0, ui.id_states[player_status[i].id].alpha }
 
                     imgui.SetCursorPosX(imgui.GetCursorPosX() + ((item_width - icon_size_main()) * 0.5));
-                    if (is_targeting_buff_menu and i == menu_target_index) then
+                    if (settings.menu_target.enabled and is_targeting_buff_menu and i == menu_target_index) then
                         -- draw a border around the icon if it is targetted in the game menu
-                        draw_rect({ -item_spacing() * 1.0, -item_spacing() * 1.0 }, { icon_size_main() + (item_spacing() * 1.0), icon_size_main() + (item_spacing() * 1.0) }, ui.color.menu_target_outline, 7.0, false);
+                        draw_rect({ -item_spacing() * 1.0, -item_spacing() * 1.0 }, { icon_size_main() + (item_spacing() * 1.0), icon_size_main() + (item_spacing() * 1.0) }, ui.color.locked_border, 7.0, false);
                     end
                     imgui.Image(icon, { icon_size_main(), icon_size_main() }, { 0, 0 }, { 1, 1 }, icon_tint, { 0, 0, 0, 0});
 
