@@ -435,6 +435,8 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
         ui.im_window = true;
         local item_width, _, text_dim = get_base_sizes():unpack();
         local player_status = party.get_player_status();
+        local is_targeting_buff_menu = resources.get_menu_is_buff_menu();
+        local menu_target_index = resources.get_menu_target_index();
 
         -- render the player status
         if (player_status ~= nil) then
@@ -460,6 +462,10 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
                     local icon_tint = { 1.0, 1.0, 1.0, ui.id_states[player_status[i].id].alpha }
 
                     imgui.SetCursorPosX(imgui.GetCursorPosX() + ((item_width - icon_size_main()) * 0.5));
+                    if (settings.menu_target.enabled and is_targeting_buff_menu and i == menu_target_index) then
+                        -- draw a border around the icon if it is targetted in the game menu
+                        draw_rect({ -item_spacing() * 1.0, -item_spacing() * 1.0 }, { icon_size_main() + (item_spacing() * 1.0), icon_size_main() + (item_spacing() * 1.0) }, ui.color.locked_border, 7.0, false);
+                    end
                     imgui.Image(icon, { icon_size_main(), icon_size_main() }, { 0, 0 }, { 1, 1 }, icon_tint, { 0, 0, 0, 0});
 
                     if (imgui.IsItemHovered()) then

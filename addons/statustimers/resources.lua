@@ -23,10 +23,12 @@
 local d3d8 = require('d3d8');
 local ffi = require('ffi');
 local compat = require('compat');
+local helpers = require('helpers');
 -------------------------------------------------------------------------------
 -- local state
 -------------------------------------------------------------------------------
 local d3d8_device = d3d8.get_device();
+local game_menu_ptr = nil;
 -------------------------------------------------------------------------------
 -- local constants
 -------------------------------------------------------------------------------
@@ -37,6 +39,8 @@ local icon_cache = T{
 -- local buffs_table = nil;
 local id_overrides = T{
 };
+
+local MENU_NAME_BUFF = 'menu    buff    ';
 -------------------------------------------------------------------------------
 -- local functions
 -------------------------------------------------------------------------------
@@ -236,5 +240,59 @@ end
 module.get_status_name = function(status_id)
     return AshitaCore:GetResourceManager():GetString(compat.buffs_table(), status_id);
 end
+
+-- return the menu target index.
+---@return number|nil the index of the menu target or nil
+module.get_menu_target_index = function()
+    local ptr = game_menu_ptr;
+    if (ptr == 0) then
+        return nil;
+    end
+
+    ptr = ashita.memory.read_uint32(ptr);
+    ptr = ashita.memory.read_uint32(ptr);
+
+    return ashita.memory.read_uint32(ptr + 0x4C);
+end
+
+-- return the menu name.
+---@return string|nil the name of the current menu or nil
+module.get_menu_name = function()
+    local ptr = game_menu_ptr;
+    if (ptr == 0) then
+        return nil;
+    end
+
+    ptr = ashita.memory.read_uint32(ptr);
+    ptr = ashita.memory.read_uint32(ptr);
+    if (ptr == 0) then
+        return nil;
+    end
+
+    local menu_header_ptr = ptr + 4;
+    local menu_header = ashita.memory.read_uint32(menu_header_ptr);
+
+    local menu_name_ptr = menu_header + 0x46;
+    local menu_name = ashita.memory.read_string(menu_name_ptr, 16);
+    return string.gsub(menu_name, '\x00', '');
+end
+
+-- shorthand for checking if the current menu is MENU_NAME_BUFF
+--@return boolean
+module.get_menu_is_buff_menu = function()
+    return module.get_menu_name() == MENU_NAME_BUFF;
+end
+
+helpers.register_init('resources_init', function()
+    game_menu_ptr = ashita.memory.find('FFXiMain.dll', 0, "8B480C85C974??8B510885D274??3B05", 16, 0);
+    if (game_menu_ptr == 0) then
+        return false;
+    end
+    return true;
+end);
+
+helpers.register_cleanup('resources_cleanup', function()
+    return true;
+end);
 
 return module;

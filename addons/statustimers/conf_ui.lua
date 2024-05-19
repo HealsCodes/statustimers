@@ -203,6 +203,11 @@ module.render_config_ui = function(settings, toggle)
                     settings.split_bars.enabled = not settings.split_bars.enabled;
                 end
                 imgui.ShowHelp('Detach target, subtarget and locked target from the main UI.');
+
+                if (imgui.Checkbox('Outline keyboard selection', { settings.menu_target.enabled })) then
+                    settings.menu_target.enabled = not settings.menu_target.enabled;
+                end
+                imgui.ShowHelp('Outline the status effect that has keyboard focus');
             imgui.EndChild();
 
             imgui.TextDisabled(('\xef\x87\xb9 2023 by %s - %s'):fmt(addon.author, addon.link));
