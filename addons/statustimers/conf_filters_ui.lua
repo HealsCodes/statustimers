@@ -232,7 +232,7 @@ module.render_config_filter_ui = function(settings, is_open)
         end
     end
 
-    imgui.SetNextWindowContentSize({ 400, 415 });
+    imgui.SetNextWindowContentSize({ 450, 530 });
 
     if (imgui.Begin('Visual Aid Filter Settings', is_open, ImGuiWindowFlags_AlwaysAutoResize)) then
         if (imgui.BeginCombo('Filter Mode', ui.mode_names[ui.mode_index[1]], ImGuiComboFlags_None)) then
