@@ -262,7 +262,7 @@ local function render_tooltip(status, is_target)
     if (name ~= nil and info ~= nil) then
         imgui.BeginTooltip();
             imgui.Text(('%s (#%d)'):fmt(name, status));
-            imgui.Text(info.Description[1]);
+            imgui.Text(info.Description[1] or '???');
             if (not is_target and resources.status_can_be_cancelled(status)) then
                 imgui.TextDisabled('(right click to cancel)');
             end
