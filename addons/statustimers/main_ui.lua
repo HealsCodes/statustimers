@@ -33,7 +33,6 @@ local party     = require('party');
 -- local constants
 -------------------------------------------------------------------------------
 local ITEM_SPACING = 3;
-local MENU_NAME_BUFF = 'menu    buff    ';
 -------------------------------------------------------------------------------
 -- local state
 -------------------------------------------------------------------------------
@@ -67,7 +66,6 @@ local ui = T {
         flags_starget = bit.bor(ImGuiWindowFlags_NoDecoration, ImGuiWindowFlags_AlwaysAutoResize),
     },
 };
-local game_menu_ptr = nil;
 
 -------------------------------------------------------------------------------
 -- local functions
@@ -403,42 +401,6 @@ local function render_split_bar(split_bar_id, name, status_list, is_locked)
     ui.im_window = false;
 end
 
--- return the menu target index.
----@return number|nil the index of the menu target or nil
-local function get_menu_target_index()
-    local ptr = game_menu_ptr;
-    if (ptr == 0) then
-        return nil;
-    end
-
-    ptr = ashita.memory.read_uint32(ptr);
-    ptr = ashita.memory.read_uint32(ptr);
-
-    return ashita.memory.read_uint32(ptr + 0x4C);
-end
-
--- return the menu name.
----@return string|nil the name of the current menu or nil
-local function get_menu_name()
-    local ptr = game_menu_ptr;
-    if (ptr == 0) then
-        return nil;
-    end
-
-    ptr = ashita.memory.read_uint32(ptr);
-    ptr = ashita.memory.read_uint32(ptr);
-    if (ptr == 0) then
-        return nil;
-    end
-
-    local menu_header_ptr = ptr + 4;
-    local menu_header = ashita.memory.read_uint32(menu_header_ptr);
-
-    local menu_name_ptr = menu_header + 0x46;
-    local menu_name = ashita.memory.read_string(menu_name_ptr, 16);
-    return string.gsub(menu_name, '\x00', '');
-end
-
 -------------------------------------------------------------------------------
 -- exported functions
 -------------------------------------------------------------------------------
@@ -475,8 +437,8 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
         ui.im_window = true;
         local item_width, _, text_dim = get_base_sizes():unpack();
         local player_status = party.get_player_status();
-        local is_targeting_buff_menu = get_menu_name() == MENU_NAME_BUFF;
-        local menu_target_index = get_menu_target_index();
+        local is_targeting_buff_menu = resources.get_menu_is_buff_menu();
+        local menu_target_index = resources.get_menu_target_index();
 
         -- render the player status
         if (player_status ~= nil) then
@@ -632,13 +594,5 @@ module.dump_status = function()
         print(chat.header(addon.name):append('player: no active effects'));
     end
 end
-
-helpers.register_init('main_ui_init', function()
-    game_menu_ptr = ashita.memory.find('FFXiMain.dll', 0, "8B480C85C974??8B510885D274??3B05", 16, 0);
-    if (game_menu_ptr == 0) then
-        return false;
-    end
-    return true;
-end);
 
 return module;
