@@ -429,6 +429,21 @@ local function render_split_bar(split_bar_id, name, status_list, is_locked)
     ui.im_window = false;
 end
 
+-- check if the UI should be hidden
+local function should_hide_ui()
+    local player = AshitaCore:GetMemoryManager():GetPlayer();
+    if (player ~= nil and party.is_player_valid()) then
+        -- hide if we're in a cutscene, the map is open, log is fullscreen or the game ui is hidden
+        return (
+            resources.get_event_system_active() 
+            or resources.get_menu_is_map() 
+            or resources.get_log_maximized()
+            or resources.get_interface_hidden()
+        );
+    end
+    -- also hide if we can't query the player
+    return true;
+end
 -------------------------------------------------------------------------------
 -- exported functions
 -------------------------------------------------------------------------------
@@ -451,6 +466,10 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
     ui.color.va._75   = helpers.color_u32_to_v4(settings.visual_aid.color75);
     ui.color.va._50   = helpers.color_u32_to_v4(settings.visual_aid.color50);
     ui.color.va._25   = helpers.color_u32_to_v4(settings.visual_aid.color25);
+
+    if (should_hide_ui()) then
+        return;
+    end
 
     ui.im_window = false;
     imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, {item_spacing(), item_spacing()});

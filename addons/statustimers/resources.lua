@@ -29,6 +29,8 @@ local helpers = require('helpers');
 -------------------------------------------------------------------------------
 local d3d8_device = d3d8.get_device();
 local game_menu_ptr = nil;
+local event_system_ptr = nil;
+local interface_hidden_ptr = nil;
 -------------------------------------------------------------------------------
 -- local constants
 -------------------------------------------------------------------------------
@@ -40,7 +42,10 @@ local icon_cache = T{
 local id_overrides = T{
 };
 
-local MENU_NAME_BUFF = 'menu    buff    ';
+local MENU_NAME_BUFF     = 'menu    buff    ';
+local MENU_NAME_MAP      = 'menu    map';
+local MENU_NAME_LOGMAXED = 'menu    fulllog';
+
 -------------------------------------------------------------------------------
 -- local functions
 -------------------------------------------------------------------------------
@@ -277,15 +282,56 @@ module.get_menu_name = function()
     return string.gsub(menu_name, '\x00', '');
 end
 
--- shorthand for checking if the current menu is MENU_NAME_BUFF
+-- shorthand to check if the current menu is MENU_NAME_BUFF
 --@return boolean
 module.get_menu_is_buff_menu = function()
     return module.get_menu_name() == MENU_NAME_BUFF;
 end
 
+-- shorthand to check if the current menu is the game map
+--@return boolean
+module.get_menu_is_map = function()
+    return string.match(module.get_menu_name() or '', MENU_NAME_MAP);
+end 
+
+-- shorthand to check if the log window is maximized
+--@return boolean
+module.get_log_maximized = function()
+    return string.match(module.get_menu_name() or '', MENU_NAME_LOGMAXED);
+end
+
+--- return a boolean indicating the current state of the eventy system
+--@return boolean
+module.get_event_system_active = function()
+    if (event_system_ptr == 0) then
+        return false;
+    end
+    local ptr = ashita.memory.read_uint32(event_system_ptr + 1);
+    if (ptr == 0) then
+        return false;
+    end
+    return (ashita.memory.read_uint8(ptr) == 1);
+end
+
+--- return the state of the native game UI
+--@return boolean
+module.get_interface_hidden = function()
+    if (interface_hidden_ptr == 0) then
+        return false;
+    end
+    local ptr = ashita.memory.read_uint32(interface_hidden_ptr + 10);
+    if (ptr == 0) then
+        return false;
+    end
+    return (ashita.memory.read_uint8(ptr + 0xB4) == 1);
+end
+
 helpers.register_init('resources_init', function()
     game_menu_ptr = ashita.memory.find('FFXiMain.dll', 0, "8B480C85C974??8B510885D274??3B05", 16, 0);
-    if (game_menu_ptr == 0) then
+    event_system_ptr = ashita.memory.find('FFXiMain.dll', 0, "A0????????84C0741AA1????????85C0741166A1????????663B05????????0F94C0C3", 0, 0);
+    interface_hidden_ptr = ashita.memory.find('FFXiMain.dll', 0, "8B4424046A016A0050B9????????E8????????F6D81BC040C3", 0, 0);
+    
+    if (game_menu_ptr == 0 or event_system_ptr == 0 or interface_hidden_ptr == 0) then
         return false;
     end
     return true;
