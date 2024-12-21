@@ -249,21 +249,49 @@ end
 -- render the tooltip for a specific status id
 ---@param status number the status id
 ---@param is_target boolean if true, don't show '(right click to cancel)' hint
-local function render_tooltip(status, is_target)
+local function render_tooltip(status, is_target, for_keyboard_target)
     if (status == nil or status < 1 or status > 0x3FF or status == 255) then
         return;
     end
 
     local info = AshitaCore:GetResourceManager():GetStatusIconByIndex(status);
     local name = resources.get_status_name(status);
+    local tip_name = ('%s (#%d)'):fmt(name, status);
+    local tip_desc = info.Description[1] or '???';
+
     if (name ~= nil and info ~= nil) then
-        imgui.BeginTooltip();
-            imgui.Text(('%s (#%d)'):fmt(name, status));
-            imgui.Text(info.Description[1] or '???');
-            if (not is_target and resources.status_can_be_cancelled(status)) then
-                imgui.TextDisabled('(right click to cancel)');
+        if (for_keyboard_target == false) then
+            -- render a regular ImGUI tooltip attached to the mouse
+            imgui.BeginTooltip();
+                imgui.Text(tip_name);
+                imgui.Text(tip_desc);
+                if (not is_target and resources.status_can_be_cancelled(status)) then
+                    imgui.TextDisabled('(right click to cancel)');
+                end
+            imgui.EndTooltip();
+        else
+            -- render a static tooltip window serving as keyboard-focus tooltip
+            local tip_name_dim = calc_text_size(tip_name);
+            local tip_desc_dim = calc_text_size(tip_desc);
+
+            local bg = { { 0, 0 }, { math.max(tip_name_dim[1], tip_desc_dim[1]) + 8, tip_name_dim[2] + tip_desc_dim[2] + 12 } };
+
+            imgui.SetNextWindowBgAlpha(0.45);
+            imgui.SetNextWindowContentSize(bg[2]);
+            
+            if (imgui.Begin('st_keyboard_tooltip', ui.is_open, ui.window_flags.inactive)) then
+                draw_rect(bg[1], bg[2], ui.color.label_bg, 0.0, true, 0);
+                draw_rect(bg[1], bg[2], ui.color.label_bg, 0.0, true, 0);
+
+                imgui.SetWindowFontScale(settings.ui_scale);
+                imgui.SetCursorPos({ imgui.GetCursorPosX() + 4, imgui.GetCursorPosY() + 6 });
+                imgui.Text(tip_name);
+                imgui.Text(tip_desc);
             end
-        imgui.EndTooltip();
+
+            imgui.SetWindowFontScale(1.0);
+            imgui.End();
+        end
     end
 end
 
@@ -460,16 +488,17 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
                 --imgui.PushItemWidth(16);
                 imgui.BeginGroup();
                     local icon_tint = { 1.0, 1.0, 1.0, ui.id_states[player_status[i].id].alpha }
+                    local has_keyboard_focus = settings.menu_target.enabled and is_targeting_buff_menu and i == menu_target_index
 
                     imgui.SetCursorPosX(imgui.GetCursorPosX() + ((item_width - icon_size_main()) * 0.5));
-                    if (settings.menu_target.enabled and is_targeting_buff_menu and i == menu_target_index) then
+                    if (has_keyboard_focus) then
                         -- draw a border around the icon if it is targetted in the game menu
                         draw_rect({ -item_spacing() * 1.0, -item_spacing() * 1.0 }, { icon_size_main() + (item_spacing() * 1.0), icon_size_main() + (item_spacing() * 1.0) }, ui.color.locked_border, 7.0, false);
                     end
                     imgui.Image(icon, { icon_size_main(), icon_size_main() }, { 0, 0 }, { 1, 1 }, icon_tint, { 0, 0, 0, 0});
 
-                    if (imgui.IsItemHovered()) then
-                        render_tooltip(player_status[i].id, false);
+                    if (imgui.IsItemHovered() or has_keyboard_focus) then
+                        render_tooltip(player_status[i].id, false, has_keyboard_focus);
                     end
 
                     -- this dummy is essential for correct resizing as it always has the actual item_width
