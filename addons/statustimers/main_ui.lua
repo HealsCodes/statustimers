@@ -249,6 +249,7 @@ end
 -- render the tooltip for a specific status id
 ---@param status number the status id
 ---@param is_target boolean if true, don't show '(right click to cancel)' hint
+---@param for_keyboard_target boolean if true will use a static ImWindow instead of a Tooltip
 local function render_tooltip(status, is_target, for_keyboard_target)
     if (status == nil or status < 1 or status > 0x3FF or status == 255) then
         return;
