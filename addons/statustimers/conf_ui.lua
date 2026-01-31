@@ -65,7 +65,7 @@ module.render_config_ui = function(settings, toggle)
     imgui.SetNextWindowContentSize({ 500 * scale_w, 760 * scale_h });
 
     if (imgui.Begin(('Statustimers v%s %s'):fmt(addon.version, compat.state()), ui.is_open, ImGuiWindowFlags_AlwaysAutoResize)) then
-        imgui.SetWindowFontScale(ui.ui_scale);
+        imgui.PushFont(nil, imgui.GetFontSize()*ui.ui_scale);
         imgui.BeginGroup();
             -- icon sizes and theme
             imgui.TextColored(header_color, 'Icon Settings');
@@ -213,6 +213,7 @@ module.render_config_ui = function(settings, toggle)
             imgui.TextDisabled(('\xef\x87\xb9 %s by %s'):fmt(os.date('%Y'), addon.author));
             imgui.TextDisabled(('-- %s'):fmt(addon.link));
         imgui.EndGroup();
+        imgui.PopFont();
     end
     imgui.End();
 

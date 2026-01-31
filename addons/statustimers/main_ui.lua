@@ -284,13 +284,13 @@ local function render_tooltip(status, is_target, for_keyboard_target)
                 draw_rect(bg[1], bg[2], ui.color.label_bg, 0.0, true, 0);
                 draw_rect(bg[1], bg[2], ui.color.label_bg, 0.0, true, 0);
 
-                imgui.SetWindowFontScale(settings.ui_scale);
+                imgui.PushFont(nil, imgui.GetFontSize()*settings.ui_scale);
                 imgui.SetCursorPos({ imgui.GetCursorPosX() + 4, imgui.GetCursorPosY() + 6 });
                 imgui.Text(tip_name);
                 imgui.Text(tip_desc);
+                imgui.PopFont();
             end
 
-            imgui.SetWindowFontScale(1.0);
             imgui.End();
         end
     end
@@ -418,12 +418,12 @@ local function render_split_bar(split_bar_id, name, status_list, is_locked)
 
     if (imgui.Begin('st_' + split_bar_id, ui.is_open, ui.split_bars[split_bar_id])) then
         ui.im_window = true;
-        imgui.SetWindowFontScale(settings.ui_scale);
+        imgui.PushFont(imgui.GetFontSize()*settings.ui_scale);
         render_target_status(name, status_list, is_locked);
         -- update the window state for the next draw
         ui.split_bars[split_bar_id] = imgui.IsWindowHovered() and ui.window_flags.active or ui.window_flags.inactive;
+        imgui.PopFont();
     end
-    imgui.SetWindowFontScale(1.0);
     imgui.End();
     imgui.PopStyleVar(1);
     ui.im_window = false;
@@ -478,7 +478,7 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
     imgui.SetNextWindowContentSize(get_window_size());
 
     if (imgui.Begin('st_ui', ui.is_open, ui.window_flags.current)) then
-        imgui.SetWindowFontScale(settings.ui_scale);
+        imgui.PushFont(nil, imgui.GetFontSize() * settings.ui_scale);
 
         ui.im_window = true;
         local item_width, _, text_dim = get_base_sizes():unpack();
@@ -590,7 +590,7 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
         -- update the window state for the next draw
         ui.window_flags.current = imgui.IsWindowHovered() and ui.window_flags.active or ui.window_flags.inactive;
     end
-    imgui.SetWindowFontScale(1.0);
+    imgui.PopFont();
     imgui.End();
     imgui.PopStyleVar(1);
     ui.im_window = false;
