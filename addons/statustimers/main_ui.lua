@@ -33,6 +33,13 @@ local party     = require('party');
 -- local constants
 -------------------------------------------------------------------------------
 local ITEM_SPACING = 3;
+
+-- ImGui corner flag fallbacks if not defined
+if ImDrawCornerFlags_All == nil then ImDrawCornerFlags_All = 0xF; end
+if ImDrawCornerFlags_TopLeft == nil then ImDrawCornerFlags_TopLeft = 0x1; end
+if ImDrawCornerFlags_TopRight == nil then ImDrawCornerFlags_TopRight = 0x2; end
+if ImDrawCornerFlags_BotLeft == nil then ImDrawCornerFlags_BotLeft = 0x4; end
+if ImDrawCornerFlags_BotRight == nil then ImDrawCornerFlags_BotRight = 0x8; end
 -------------------------------------------------------------------------------
 -- local state
 -------------------------------------------------------------------------------
@@ -418,7 +425,7 @@ local function render_split_bar(split_bar_id, name, status_list, is_locked)
 
     if (imgui.Begin('st_' + split_bar_id, ui.is_open, ui.split_bars[split_bar_id])) then
         ui.im_window = true;
-        imgui.PushFont(imgui.GetFontSize()*settings.ui_scale);
+        imgui.PushFont(nil, imgui.GetFontSize()*settings.ui_scale);
         render_target_status(name, status_list, is_locked);
         -- update the window state for the next draw
         ui.split_bars[split_bar_id] = imgui.IsWindowHovered() and ui.window_flags.active or ui.window_flags.inactive;
@@ -466,6 +473,7 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
     ui.color.va._75   = helpers.color_u32_to_v4(settings.visual_aid.color75);
     ui.color.va._50   = helpers.color_u32_to_v4(settings.visual_aid.color50);
     ui.color.va._25   = helpers.color_u32_to_v4(settings.visual_aid.color25);
+
 
     if (should_hide_ui()) then
         return;

@@ -41,21 +41,22 @@ module.register_init = function(name, callback)
 end
 
 -- run all callbacks queued by register_init in order
---- if a callback returns a value and that value is false then abort.
+--- if a callback returns a value and that value is false, log but continue.
 ---@return boolean status true if all callbacks succeeded.
 module.run_init = function()
     if (not next(init_callbacks)) then
         return true;
     end
 
+    local all_succeeded = true;
     for i = 1,#init_callbacks,1 do
         local res = init_callbacks[i]['cb']();
         if (res ~= nil and res == false) then
             print('init failed for ' .. init_callbacks[i]['name']);
-            return false;
+            all_succeeded = false;
         end
     end
-    return true;
+    return all_succeeded;
 end
 
 -- register a callback to be executed by 'run_cleanup'

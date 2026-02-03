@@ -40,13 +40,19 @@ local real_utcstamp_pointer = nil;
 ---@return number timestamp the game's UTC timestamp
 local function get_utcstamp()
     local ptr = real_utcstamp_pointer;
-    if (ptr == 0) then
+    if (ptr == nil or ptr == 0) then
         return INFINITE_DURATION;
     end
 
     -- double dereference the pointer to get the correct address
     ptr = ashita.memory.read_uint32(ptr);
+    if (ptr == nil or ptr == 0) then
+        return INFINITE_DURATION;
+    end
     ptr = ashita.memory.read_uint32(ptr);
+    if (ptr == nil or ptr == 0) then
+        return INFINITE_DURATION;
+    end
     -- the utcstamp is at offset 0x0C
     return ashita.memory.read_uint32(ptr + 0x0C);
 end
@@ -204,9 +210,14 @@ module.get_player_status = function()
             return -1;
         end
 
+        local utcstamp = get_utcstamp();
+        if (utcstamp == INFINITE_DURATION) then
+            return -1;
+        end
+
         local vana_base_stamp = 0x3C307D70;
         --get the time since vanadiel epoch
-        local offset = get_utcstamp() - vana_base_stamp;
+        local offset = utcstamp - vana_base_stamp;
         --multiply it by 60 to create like terms
         local comparand = offset * 60;
         --get actual time remaining
@@ -244,7 +255,7 @@ end
 
 helpers.register_init('party_init', function()
     real_utcstamp_pointer = ashita.memory.find('FFXiMain.dll', 0, '8B0D????????8B410C8B49108D04808D04808D04808D04C1C3', 2, 0);
-    if (real_utcstamp_pointer == 0) then
+    if (real_utcstamp_pointer == nil or real_utcstamp_pointer == 0) then
         return false;
     end
     return true;

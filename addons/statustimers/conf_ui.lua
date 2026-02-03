@@ -69,7 +69,7 @@ module.render_config_ui = function(settings, toggle)
         imgui.BeginGroup();
             -- icon sizes and theme
             imgui.TextColored(header_color, 'Icon Settings');
-            imgui.BeginChild('conf_icons', { 0 * scale_w, 100 * scale_h }, true);
+            imgui.BeginChild('conf_icons', { 0 * scale_w, 100 * scale_h });
                 local main_size = T{ settings.icons.size.main };
                 local target_size = T{ settings.icons.size.target };
 
@@ -106,7 +106,7 @@ module.render_config_ui = function(settings, toggle)
 
             -- font and background colours
             imgui.TextColored(header_color, 'Font Settings');
-            imgui.BeginChild('conf_font', { 0 * scale_w, 100 * scale_h }, true);
+            imgui.BeginChild('conf_font', { 0 * scale_w, 100 * scale_h });
                 c = helpers.color_u32_to_v4(settings.font.color);
                 if (imgui.ColorEdit4('\xef\x94\xbf Colour', c)) then
                     settings.font.color = helpers.color_v4_to_u32(c);
@@ -133,14 +133,14 @@ module.render_config_ui = function(settings, toggle)
             imgui.ShowHelp('Visual Aid shows a coloured swatch below each status effect.\n' ..
                                 'The colour is based the remaining duration in seconds and fully configurable.\n');
 
-            imgui.BeginChild('conf_va', { 0 * scale_w, 345 * scale_h }, true)
+            imgui.BeginChild('conf_va', { 0 * scale_w, 345 * scale_h })
                 if (imgui.Checkbox('Enabled?', { settings.visual_aid.enabled })) then
                     settings.visual_aid.enabled = not settings.visual_aid.enabled;
                 end
                 imgui.ShowHelp('Show visual aid swatches.');
 
                 imgui.TextColored(header_color, 'Thresholds');
-                imgui.BeginChild('conf_va_threshold', { 0 * settings.ui_scale, 100 * settings.ui_scale }, true)
+                imgui.BeginChild('conf_va_threshold', { 0 * settings.ui_scale, 100 * settings.ui_scale })
                     imgui.PushID('T#1');
                     imgui.InputInt(' ', settings.visual_aid.thresholds.t75);
                     imgui.PopID();
@@ -164,7 +164,7 @@ module.render_config_ui = function(settings, toggle)
                 imgui.EndChild();
 
                 imgui.TextColored(header_color, 'Colours');
-                imgui.BeginChild('conf_va_colours', { 0 * scale_w, 125 * scale_h }, true)
+                imgui.BeginChild('conf_va_colours', { 0 * scale_w, 125 * scale_h })
                     c = helpers.color_u32_to_v4(settings.visual_aid.color100);
                     if (imgui.ColorEdit4(('\xef\x80\x97 > T1 (%ds)'):format(settings.visual_aid.thresholds.t75[1]), c)) then
                         settings.visual_aid.color100 = helpers.color_v4_to_u32(c);
@@ -198,7 +198,7 @@ module.render_config_ui = function(settings, toggle)
 
             -- miscelanious settings
             imgui.TextColored(header_color, 'Misc.');
-            imgui.BeginChild('conf_misc', { 0 * scale_w, 70 * scale_h }, true)
+            imgui.BeginChild('conf_misc', { 0 * scale_w, 70 * scale_h })
                 if (imgui.Checkbox('Movable target/subtarget bars?', { settings.split_bars.enabled })) then
                     settings.split_bars.enabled = not settings.split_bars.enabled;
                 end

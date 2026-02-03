@@ -250,12 +250,18 @@ end
 ---@return number|nil the index of the menu target or nil
 module.get_menu_target_index = function()
     local ptr = game_menu_ptr;
-    if (ptr == 0) then
+    if (ptr == nil or ptr == 0) then
         return nil;
     end
 
     ptr = ashita.memory.read_uint32(ptr);
+    if (ptr == nil or ptr == 0) then
+        return nil;
+    end
     ptr = ashita.memory.read_uint32(ptr);
+    if (ptr == nil or ptr == 0) then
+        return nil;
+    end
 
     return ashita.memory.read_uint32(ptr + 0x4C);
 end
@@ -264,21 +270,30 @@ end
 ---@return string|nil the name of the current menu or nil
 module.get_menu_name = function()
     local ptr = game_menu_ptr;
-    if (ptr == 0) then
+    if (ptr == nil or ptr == 0) then
         return nil;
     end
 
     ptr = ashita.memory.read_uint32(ptr);
+    if (ptr == nil or ptr == 0) then
+        return nil;
+    end
     ptr = ashita.memory.read_uint32(ptr);
-    if (ptr == 0) then
+    if (ptr == nil or ptr == 0) then
         return nil;
     end
 
     local menu_header_ptr = ptr + 4;
     local menu_header = ashita.memory.read_uint32(menu_header_ptr);
+    if (menu_header == nil or menu_header == 0) then
+        return nil;
+    end
 
     local menu_name_ptr = menu_header + 0x46;
     local menu_name = ashita.memory.read_string(menu_name_ptr, 16);
+    if (menu_name == nil) then
+        return nil;
+    end
     return string.gsub(menu_name, '\x00', '');
 end
 
@@ -303,11 +318,11 @@ end
 --- return a boolean indicating the current state of the eventy system
 --@return boolean
 module.get_event_system_active = function()
-    if (event_system_ptr == 0) then
+    if (event_system_ptr == nil or event_system_ptr == 0) then
         return false;
     end
     local ptr = ashita.memory.read_uint32(event_system_ptr + 1);
-    if (ptr == 0) then
+    if (ptr == nil or ptr == 0) then
         return false;
     end
     return (ashita.memory.read_uint8(ptr) == 1);
@@ -316,11 +331,11 @@ end
 --- return the state of the native game UI
 --@return boolean
 module.get_interface_hidden = function()
-    if (interface_hidden_ptr == 0) then
+    if (interface_hidden_ptr == nil or interface_hidden_ptr == 0) then
         return false;
     end
     local ptr = ashita.memory.read_uint32(interface_hidden_ptr + 10);
-    if (ptr == 0) then
+    if (ptr == nil or ptr == 0) then
         return false;
     end
     return (ashita.memory.read_uint8(ptr + 0xB4) == 1);
@@ -331,7 +346,7 @@ helpers.register_init('resources_init', function()
     event_system_ptr = ashita.memory.find('FFXiMain.dll', 0, "A0????????84C0741AA1????????85C0741166A1????????663B05????????0F94C0C3", 0, 0);
     interface_hidden_ptr = ashita.memory.find('FFXiMain.dll', 0, "8B4424046A016A0050B9????????E8????????F6D81BC040C3", 0, 0);
     
-    if (game_menu_ptr == 0 or event_system_ptr == 0 or interface_hidden_ptr == 0) then
+    if (game_menu_ptr == nil or game_menu_ptr == 0 or event_system_ptr == nil or event_system_ptr == 0 or interface_hidden_ptr == nil or interface_hidden_ptr == 0) then
         return false;
     end
     return true;
