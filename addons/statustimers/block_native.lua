@@ -39,42 +39,37 @@ local handler_data = T {
 local module = {};
 
 helpers.register_init('block_native_init', function()
-    handler_data.pointer[1] = ashita.memory.find('FFXiMain.dll', 0, '75??8B4E0851B9', 0, 0);
-    handler_data.pointer[2] = ashita.memory.find('FFXiMain.dll', 0, '7D??33C05EC20400C6', 0, 0);
+    handler_data.pointer[1] = ashita.memory.find('FFXiMain.dll', 0, '75??55518B0D????????E8????????85C07F??8BDE', 0, 0);
+    handler_data.pointer[2] = ashita.memory.find('FFXiMain.dll', 0, '75??55518B0D????????E8????????85C07F??8BDE', 0, 1);
 
-    if (handler_data.pointer[1] == 0 or handler_data.pointer[2] == 0) then
+    if (handler_data.pointer[1] == nil or handler_data.pointer[1] == 0 or handler_data.pointer[2] == nil or handler_data.pointer[2] == 0) then
         return false;
     end
 
-    -- Backup the original instructions..
+    if (handler_data.pointer[1] == handler_data.pointer[2]) then
+        return false;
+    end
+
+    -- backup the original instructions
     handler_data.opcodes[1] = ashita.memory.read_uint16(handler_data.pointer[1]);
     handler_data.opcodes[2] = ashita.memory.read_uint16(handler_data.pointer[2]);
 
-    -- Check for previous modifications..
-    if (handler_data.opcodes[1] == 0x9090 or handler_data.opcodes[2] == 0x9090) then
-        return false;
+    -- check if first location has been modified
+    if (handler_data.opcodes[1] ~= 0x9090) then
+        -- Patch only the FIRST location - hides display but keeps F key menu working
+        ashita.memory.write_uint16(handler_data.pointer[1], 0x9090);
+        return true;
     end
-
-    -- Patch game functions..
-    ashita.memory.write_uint16(handler_data.pointer[1], 0x9090);
-    ashita.memory.write_uint16(handler_data.pointer[2], 0x9090);
-
-    return true;
+    return false;
 end);
 
 helpers.register_cleanup('block_native_cleanup', function()
-    if (handler_data.pointer[1] ~= 0 and handler_data.opcodes[1] ~= 0) then
-        ashita.memory.write_uint16(handler_data.pointer[1], handler_data.opcodes[1]);
-        handler_data.pointer[1] = 0;
-        handler_data.opcodes[1] = 0;
+    -- revert the NOP to the original instruction
+    if (handler_data.pointer[1] ~= nil and handler_data.pointer[1] ~= 0) then
+        if (handler_data.opcodes[1] ~= 0x0000) then
+            ashita.memory.write_uint16(handler_data.pointer[1], handler_data.opcodes[1]);
+        end
     end
-
-    if (handler_data.pointer[2] ~= 0 and handler_data.opcodes[2] ~= 0) then
-        ashita.memory.write_uint16(handler_data.pointer[2], handler_data.opcodes[2]);
-        handler_data.pointer[2] = 0;
-        handler_data.opcodes[2] = 0;
-    end
-
     return true;
 end);
 
