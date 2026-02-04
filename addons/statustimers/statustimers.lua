@@ -19,7 +19,7 @@
 
 addon.name    = 'statustimers';
 addon.author  = 'heals';
-addon.version = '4.3.0';
+addon.version = '4.3.001';
 addon.desc    = 'Replacement for the default status timer display';
 addon.link    = 'https://github.com/HealsCodes/statustimers';
 
