@@ -46,10 +46,6 @@ local default_settings = T{
         theme = '-default-',
     },
 
-    menu_target = T{
-        enabled = true,
-    },
-
     font = T{
         color = 0xFFFFFFFF,
         background = 0x72000000,
