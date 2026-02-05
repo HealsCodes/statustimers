@@ -76,7 +76,7 @@ local function item_spacing()
 end
 
 -- return a imgui.CalcTextSize(text) applying UI scaling if needed
----@return table { text_dim.x, text_dim.y } 
+---@return table { text_dim.x, text_dim.y }
 local function calc_text_size(text)
     local text_dim = { imgui.CalcTextSize(text) };
     if(ui.im_window == false) then
@@ -101,7 +101,7 @@ end
 ---@return table sizes { item_width_main, item_width_target, { text_dim.x, text_dim.y } }
 local function get_base_sizes()
     local text_dim = calc_text_size('WWW');
-    return T{ 
+    return T{
         math.max(text_dim[1], icon_size_main()),
         math.max(text_dim[1], icon_size_target()),
         text_dim
@@ -202,9 +202,9 @@ local function draw_rect(top_left, bot_right, color, radius, fill, flags)
     };
 
     if (fill == nil or fill) then
-        imgui.GetWindowDrawList():AddRectFilled(abs_rect[1], abs_rect[2], color_u32, radius or 0.0, flags or ImDrawCornerFlags_All);
+        imgui.GetWindowDrawList():AddRectFilled(abs_rect[1], abs_rect[2], color_u32, radius or 0.0, flags or ImDrawFlags_RoundCornersAll);
     else
-        imgui.GetWindowDrawList():AddRect(abs_rect[1], abs_rect[2], color_u32, radius or 0.0, flags or ImDrawCornerFlags_All);
+        imgui.GetWindowDrawList():AddRect(abs_rect[1], abs_rect[2], color_u32, radius or 0.0, flags or ImDrawFlags_RoundCornersAll);
     end
 end
 
@@ -283,7 +283,7 @@ local function render_target_status(name, status_list, is_locked)
     imgui.Dummy({ 0, 0 });
 
     local bg = { { 0, 0 }, target_status_size(name, status_list) };
-    local corner_flags = bit.bor(ImDrawCornerFlags_BotLeft, ImDrawCornerFlags_TopRight);
+    local corner_flags = bit.bor(ImDrawFlags_RoundCornersBotLeft, ImDrawFlags_RoundCornersTopRight);
 
     draw_rect(bg[1], bg[2], ui.color.label_bg, 7.0, true, corner_flags);
     if (is_locked) then
@@ -410,8 +410,8 @@ local function should_hide_ui()
     if (player ~= nil and party.is_player_valid()) then
         -- hide if we're in a cutscene, the map is open, log is fullscreen or the game ui is hidden
         return (
-            resources.get_event_system_active() 
-            or resources.get_menu_is_map() 
+            resources.get_event_system_active()
+            or resources.get_menu_is_map()
             or resources.get_log_maximized()
             or resources.get_interface_hidden()
         );
@@ -546,7 +546,7 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
         -- add the settings button if the window is being hovered
         if (imgui.IsWindowHovered() and settings_clicked ~= nil) then
             if get_window_size()[1] ~= 0 then
-                imgui.SetCursorPos({ imgui.GetWindowWidth() - 25 * settings.ui_scale, 
+                imgui.SetCursorPos({ imgui.GetWindowWidth() - 25 * settings.ui_scale,
                                      imgui.GetWindowHeight() - 25 * settings.ui_scale });
             end
             imgui.Button('\xef\x82\xad', { 20 * settings.ui_scale, 20 * settings.ui_scale });
