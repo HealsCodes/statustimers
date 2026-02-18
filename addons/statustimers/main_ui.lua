@@ -1,5 +1,5 @@
 --[[
-* statustimers - Copyright (c) 2022 Heals
+* statustimers - Copyright (c) 2022-2026 Heals
 *
 * This file is part of statustimers for Ashita.
 *
