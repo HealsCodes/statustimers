@@ -283,7 +283,7 @@ local function render_target_status(name, status_list, is_locked)
     imgui.Dummy({ 0, 0 });
 
     local bg = { { 0, 0 }, target_status_size(name, status_list) };
-    local corner_flags = bit.bor(ImDrawFlags_RoundCornersBotLeft, ImDrawFlags_RoundCornersTopRight);
+    local corner_flags = bit.bor(ImDrawFlags_RoundCornersBottomLeft, ImDrawFlags_RoundCornersTopRight);
 
     draw_rect(bg[1], bg[2], ui.color.label_bg, 7.0, true, corner_flags);
     if (is_locked) then
@@ -393,7 +393,7 @@ local function render_split_bar(split_bar_id, name, status_list, is_locked)
 
     if (imgui.Begin('st_' + split_bar_id, ui.is_open, ui.split_bars[split_bar_id])) then
         ui.im_window = true;
-        imgui.PushFont(imgui.GetFontSize()*settings.ui_scale);
+        imgui.PushFont(nil, imgui.GetFontSize()*settings.ui_scale);
         render_target_status(name, status_list, is_locked);
         -- update the window state for the next draw
         ui.split_bars[split_bar_id] = imgui.IsWindowHovered() and ui.window_flags.active or ui.window_flags.inactive;
