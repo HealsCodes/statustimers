@@ -34,6 +34,7 @@ require('block_native');
 local helpers = require('helpers');
 local main_ui = require('main_ui');
 local conf_ui = require('conf_ui');
+local keynav = require('keynav');
 -------------------------------------------------------------------------------
 -- local state
 -------------------------------------------------------------------------------
@@ -50,6 +51,8 @@ local default_settings = T{
         color = 0xFFFFFFFF,
         background = 0x72000000,
     },
+
+    key_nav = keynav.defaults(),
 
     visual_aid = T{
         enabled  = false,
@@ -103,6 +106,8 @@ settings.register('settings', 'settings_update', function (s)
         st.settings = s;
     end
 
+    keynav.bind(st.settings, try_cancel);
+
     -- Save the current settings..
     settings.save();
 end);
@@ -110,9 +115,11 @@ end);
 local ffi = require('ffi');
 ashita.events.register('load', 'statustimers_load', function ()
     helpers.run_init();
+    keynav.bind(st.settings, try_cancel);
 end)
 
 ashita.events.register('unload', 'statustimers_unload', function ()
+    keynav.cleanup();
     settings.save();
     helpers.run_cleanup();
 end)
@@ -135,7 +142,11 @@ ashita.events.register('command', 'statustimers_command', function (e)
     e.blocked = true;
 
     if (args[1] == '/statustimers' or args[1] == '/stt') then
-        toggle_settings();
+        if (args[2] == 'nav' and #args > 2) then
+            keynav.action(args[3]);
+        else
+            toggle_settings();
+        end
     elseif (args[1] == '/lockstatus') then
         if (#args == 1) then
             print(chat.header(addon.name):append(chat.error(('/lockstatus requires a party member name'))));
