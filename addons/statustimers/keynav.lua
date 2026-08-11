@@ -59,13 +59,13 @@ end
 
 -- use native ashita /bind for our binds
 local function set_bind(bind, active)
-    local bindstr = '';
+    local pending_bind = '';
 
     if (active) then
-        bindstr = cfg[bind.key] or '';
+        pending_bind = cfg[bind.key] or '';
     end
 
-    if (bindstr == bind.bindstr) then
+    if (pending_bind == bind.bindstr) then
         return;
     end
 
@@ -73,11 +73,12 @@ local function set_bind(bind, active)
         run('/unbind ' .. bind.bindstr);
     end
 
-    bind.bindstr = bindstr;
-
-    if (bindstr ~= '') then
-        run(('/bind %s %s%s'):fmt(bindstr, COMMAND, bind.key));
+    if (pending_bind ~= '') then
+        run(('/bind %s %s%s'):fmt(pending_bind, COMMAND, bind.key));
     end
+
+    -- save out what bound
+    bind.bindstr = pending_bind;
 end
 
 -- confirm the bind is not taken via ashita already
