@@ -22,6 +22,7 @@
 -------------------------------------------------------------------------------
 require('common');
 local chat = require('chat');
+local ffi = require('ffi');
 local party = require('party');
 local resources = require('resources');
 -------------------------------------------------------------------------------
@@ -29,18 +30,25 @@ local resources = require('resources');
 -------------------------------------------------------------------------------
 local COMMAND = '/statustimers nav ';
 
+-- modifier prefixes for ashita binds
+local MODIFIERS = T{ alt = '!', apps = '#', ctrl = '^', shift = '+', win = '@' };
+
 -- bind used for navigation, select is the only persistent one
 local BINDS = T{
-    T{ key = 'select',  label = 'Select buffs', default = '^F',     bindstr = '', persistent = true },
-    T{ key = 'left',    label = 'Move left',    default = 'LEFT',   bindstr = '' },
-    T{ key = 'right',   label = 'Move right',   default = 'RIGHT',  bindstr = '' },
-    T{ key = 'confirm', label = 'Cancel buff',  default = 'RETURN', bindstr = '' },
-    T{ key = 'exit',    label = 'Exit',         default = 'ESCAPE', bindstr = '' },
+    T{ action = 'select',  label = 'Select buffs', default = '^F', persistent = true },
+    T{ action = 'left',    label = 'Move left',    default = 'LEFT' },
+    T{ action = 'right',   label = 'Move right',   default = 'RIGHT' },
+    T{ action = 'confirm', label = 'Cancel buff',  default = 'RETURN' },
+    T{ action = 'exit',    label = 'Exit',         default = 'ESCAPE' },
 };
 
-local state = T{ active = false, index = 1 };
+local state = T{
+    active        = false,
+    index         = 1,
+    cfg           = T{},
+    current_binds = T{},
+};
 
-local cfg         = T{};
 local cancel_func = nil;
 -------------------------------------------------------------------------------
 -- local functions
@@ -53,64 +61,64 @@ local function status_count()
     return list, #list;
 end
 
-local function run(command)
-    AshitaCore:GetChatManager():ExecuteScriptString(command, '', false);
-end
+-- parse ashita keybind format into scancodes
+local function parse_keybind(kb, keybind)
+    local mod_prefix, key_name = keybind:match('^([!#%^%+@]*)(.+)$');
+    local mods = T{};
 
--- use native ashita /bind for our binds
-local function set_bind(bind, active)
-    local pending_bind = '';
-
-    if (active) then
-        pending_bind = cfg[bind.key] or '';
+    for mod, char in pairs(MODIFIERS) do
+        mods[mod] = mod_prefix ~= nil and mod_prefix:find(char, 1, true) ~= nil;
     end
 
-    if (pending_bind == bind.bindstr) then
+    return kb:S2D(key_name or ''), mods;
+end
+
+local function unbind(kb, action)
+    local current_keybind = state.current_binds[action];
+    if (current_keybind == nil) then
         return;
     end
 
-    if (bind.bindstr ~= '') then
-        run('/unbind ' .. bind.bindstr);
-    end
+    local scancode, mods = parse_keybind(kb, current_keybind);
 
-    if (pending_bind ~= '') then
-        run(('/bind %s %s%s'):fmt(pending_bind, COMMAND, bind.key));
-    end
-
-    -- save out what bound
-    bind.bindstr = pending_bind;
+    kb:Unbind(scancode, true, mods.alt, mods.apps, mods.ctrl, mods.shift, mods.win, false, false);
+    state.current_binds[action] = nil;
 end
 
--- confirm the bind is not taken via ashita already
-local function is_taken(kb, bind)
-    local bindstr = cfg[bind.key] or '';
-
-    if (bindstr == '' or bindstr == bind.bindstr) then
-        return false;
-    end
-
-    local key  = bindstr:match('[!^@#+]*(.+)$');
-    local mods = T{};
-
-    for name, prefix in pairs(T{ alt = '!', apps = '#', ctrl = '^', shift = '+', win = '@' }) do
-        mods[name] = bindstr:find(prefix, 1, true) ~= nil;
-    end
-
-    -- default binds use key down
-    local bound = kb:IsBound(kb:S2D(key), true, mods.alt, mods.apps, mods.ctrl, mods.shift, mods.win, false, false);
-    if (bound) then
+local function bind(kb, action, pending_keybind)
+    local scancode, mods = parse_keybind(kb, pending_keybind);
+    if (scancode == 0) then
         print(chat.header('statustimers'):append(chat.error(
-            ('%s is already bound, pick another key for %s.'):fmt(bindstr, bind.key))));
-        return true;
+            ('%s is not a valid key for %s.'):fmt(pending_keybind, action))));
+        return;
     end
 
-    return false;
+    local taken = kb:IsBound(scancode, true, mods.alt, mods.apps, mods.ctrl, mods.shift, mods.win, false, false);
+    if (taken) then
+        print(chat.header('statustimers'):append(chat.error(
+            ('%s is already bound, pick another key for %s.'):fmt(pending_keybind, action))));
+        return;
+    end
+
+    kb:Bind(scancode, true, mods.alt, mods.apps, mods.ctrl, mods.shift, mods.win, false, false, COMMAND .. action);
+    state.current_binds[action] = pending_keybind;
 end
 
+local function pending_bind(b)
+    if (state.active or b.persistent) then
+        return state.cfg[b.action] or '';
+    end
+
+    return '';
+end
+
+local function current_bind(b)
+    return state.current_binds[b.action] or '';
+end
 
 -- set binds to silent so we dont slam the chat window
 -- cache the old value to reset after
-local function apply()
+local function update_binds()
     local kb = AshitaCore:GetInputManager():GetKeyboard();
     if (kb == nil) then
         return;
@@ -120,11 +128,16 @@ local function apply()
     kb:SetSilentBinds(true);
 
     for _, b in ipairs(BINDS) do
-        if (is_taken(kb, b)) then
-            break;
-        end
+        local pending = pending_bind(b);
 
-        set_bind(b, b.persistent or state.active);
+        -- only update the keys that are changing
+        if (pending ~= current_bind(b)) then
+            unbind(kb, b.action);
+
+            if (pending ~= '') then
+                bind(kb, b.action, pending);
+            end
+        end
     end
 
     kb:SetSilentBinds(current_silent);
@@ -143,7 +156,7 @@ local function set_active(flag)
 
     state.active = flag;
     state.index  = 1;
-    apply();
+    update_binds();
 end
 
 local function move(delta)
@@ -197,18 +210,18 @@ local ACTIONS = T{
 module.defaults = function()
     local t = T{};
     for _, b in ipairs(BINDS) do
-        t[b.key] = b.default;
+        t[b.action] = b.default;
     end
     return t;
 end
 
-module.rebind = apply;
+module.rebind = update_binds;
 
 module.bind = function(settings, cancel)
-    cfg         = settings.key_nav;
+    state.cfg   = settings.key_nav;
     cancel_func = cancel;
 
-    apply();
+    update_binds();
 end
 
 -- execute the action, select is always valid, else check if active
@@ -223,8 +236,8 @@ end
 -- reset everything
 module.cleanup = function()
     state.active = false;
-    cfg          = T{};
-    apply();
+    state.cfg    = T{};
+    update_binds();
 end
 
 -- index of the outlined icon
@@ -241,5 +254,18 @@ module.focus_index = function(count)
     state.index = math.min(state.index, count);
     return state.index;
 end
+
+-- ashita skips the unload event for addons that error out, so lean on the gc
+-- finalizer as a last chance to hand these keys back to the game
+module.gc = ffi.gc(ffi.cast('uint8_t*', 0), function()
+    local kb = AshitaCore:GetInputManager():GetKeyboard();
+    if (kb == nil) then
+        return;
+    end
+
+    for action in pairs(state.current_binds) do
+        unbind(kb, action);
+    end
+end);
 
 return module;

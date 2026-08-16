@@ -217,12 +217,12 @@ module.render_config_ui = function(settings, toggle)
 
             imgui.BeginChild('conf_keynav', { 0 * scale_w, keynav_h }, ImGuiChildFlags_Borders)
                 for _, b in ipairs(keynav.BINDS) do
-                    local buffer = T{ settings.key_nav[b.key] or '' };
+                    local buffer = T{ settings.key_nav[b.action] or '' };
 
-                    imgui.PushID('keynav#' .. b.key);
+                    imgui.PushID('keynav#' .. b.action);
                     imgui.PushItemWidth(120 * scale_w);
                     if (imgui.InputText('', buffer, 32)) then
-                        settings.key_nav[b.key] = buffer[1];
+                        settings.key_nav[b.action] = buffer[1];
                     end
 
                     -- rebind once the box is done, not on every keystroke
