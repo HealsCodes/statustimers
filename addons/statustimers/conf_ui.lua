@@ -28,6 +28,7 @@ local helpers = require('helpers');
 local resources = require('resources');
 local filters_ui = require('conf_filters_ui');
 local compat = require('compat');
+local keynav = require('keynav');
 -------------------------------------------------------------------------------
 -- local state
 -------------------------------------------------------------------------------
@@ -62,7 +63,7 @@ module.render_config_ui = function(settings, toggle)
     local scale_w = math.max(1.0, ui.ui_scale * 1.0);
     local scale_h = math.max(1.0, ui.ui_scale * 0.74);
 
-    imgui.SetNextWindowContentSize({ 500 * scale_w, 760 * scale_h });
+    imgui.SetNextWindowContentSize({ 500 * scale_w, 915 * scale_h });
 
     if (imgui.Begin(('Statustimers v%s %s'):fmt(addon.version, compat.state()), ui.is_open, ImGuiWindowFlags_AlwaysAutoResize)) then
         imgui.PushFont(nil, imgui.GetFontSize()*ui.ui_scale);
@@ -203,6 +204,37 @@ module.render_config_ui = function(settings, toggle)
                     settings.split_bars.enabled = not settings.split_bars.enabled;
                 end
                 imgui.ShowHelp('Detach target, subtarget and locked target from the main UI.');
+            imgui.EndChild();
+
+            -- buff selection binds
+            imgui.TextColored(header_color, 'keyboard Navigation');
+            imgui.ShowHelp('Step through your own buffs and cancel one without the mouse.\n' ..
+                                '/bind syntax: ^ ctrl, ! alt, + shift. e.g. ^E, LEFT, NUMPAD4.\n' ..
+                                'Use a pipe character to bind multiple keys, e.g. J|LEFT.\n' ..
+                                'Clear a box to unbind it.');
+
+            local keynav_h = #keynav.BINDS * imgui.GetFrameHeightWithSpacing()
+                           + imgui.GetStyle().WindowPadding.y * 2;
+
+            imgui.BeginChild('conf_keynav', { 0 * scale_w, keynav_h }, ImGuiChildFlags_Borders)
+                for _, b in ipairs(keynav.BINDS) do
+                    local buffer = T{ settings.key_nav[b.action] or '' };
+
+                    imgui.PushID('keynav#' .. b.action);
+                    imgui.PushItemWidth(120 * scale_w);
+                    if (imgui.InputText('', buffer, 32)) then
+                        settings.key_nav[b.action] = buffer[1];
+                    end
+
+                    -- rebind once the box is done, not on every keystroke
+                    if (imgui.IsItemDeactivatedAfterEdit()) then
+                        keynav.rebind();
+                    end
+                    imgui.PopItemWidth();
+                    imgui.PopID();
+                    imgui.SameLine();
+                    imgui.Text(b.label);
+                end
             imgui.EndChild();
 
             imgui.TextDisabled(('\xef\x87\xb9 %s by %s'):fmt(os.date('%Y'), addon.author));

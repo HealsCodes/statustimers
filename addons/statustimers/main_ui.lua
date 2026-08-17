@@ -29,6 +29,7 @@ local chat = require('chat');
 local helpers   = require('helpers');
 local resources = require('resources');
 local party     = require('party');
+local keynav    = require('keynav');
 -------------------------------------------------------------------------------
 -- local constants
 -------------------------------------------------------------------------------
@@ -249,7 +250,8 @@ end
 -- render the tooltip for a specific status id
 ---@param status number the status id
 ---@param is_target boolean if true, don't show '(right click to cancel)' hint
-local function render_tooltip(status, is_target)
+---@param pos table|nil screen position to pin it to, defaults to the mouse
+local function render_tooltip(status, is_target, pos)
     if (status == nil or status < 1 or status > 0x3FF or status == 255) then
         return;
     end
@@ -260,6 +262,9 @@ local function render_tooltip(status, is_target)
     local tip_desc = info.Description[1] or '???';
 
     if (name ~= nil and info ~= nil) then
+        if (pos ~= nil) then
+            imgui.SetNextWindowPos(pos);
+        end
         -- render a regular ImGUI tooltip attached to the mouse
         imgui.BeginTooltip();
             imgui.Text(tip_name);
@@ -443,6 +448,8 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
     ui.color.va._25   = helpers.color_u32_to_v4(settings.visual_aid.color25);
 
     if (should_hide_ui()) then
+        -- never keep swallowing input while the bar is invisible (cutscenes, map, ...)
+        keynav.stop();
         return;
     end
 
@@ -458,7 +465,13 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
         ui.im_window = true;
         local item_width, _, text_dim = get_base_sizes():unpack();
         local player_status = party.get_player_status();
-        local is_targeting_buff_menu = resources.get_menu_is_buff_menu();
+        local nav_index = keynav.focus_index(player_status ~= nil and #player_status or 0);
+        -- keyboard navigation pins the tooltip under the bar instead of the cursor
+        local nav_tip;
+        if (nav_index ~= nil) then
+            local x, y = imgui.GetWindowPos();
+            nav_tip = { x, y + select(2, imgui.GetWindowSize()) };
+        end
 
         -- render the player status
         if (player_status ~= nil) then
@@ -483,10 +496,17 @@ module.render_main_ui = function(s, status_clicked, settings_clicked)
                 imgui.BeginGroup();
                     local icon_tint = { 1.0, 1.0, 1.0, ui.id_states[player_status[i].id].alpha }
                     imgui.SetCursorPosX(imgui.GetCursorPosX() + ((item_width - icon_size_main()) * 0.5));
+
+                    if (i == nav_index) then
+                        draw_rect({ -item_spacing(), -item_spacing() },
+                            { icon_size_main() + item_spacing(), icon_size_main() + item_spacing() },
+                            ui.color.locked_border, 7.0, false);
+                    end
+
                     imgui.Image(icon, { icon_size_main(), icon_size_main() }, { 0, 0 }, { 1, 1 }, icon_tint, { 0, 0, 0, 0});
 
-                    if (imgui.IsItemHovered()) then
-                        render_tooltip(player_status[i].id, false);
+                    if (imgui.IsItemHovered() or i == nav_index) then
+                        render_tooltip(player_status[i].id, false, i == nav_index and nav_tip or nil);
                     end
 
                     -- this dummy is essential for correct resizing as it always has the actual item_width
