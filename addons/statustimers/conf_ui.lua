@@ -210,6 +210,7 @@ module.render_config_ui = function(settings, toggle)
             imgui.TextColored(header_color, 'keyboard Navigation');
             imgui.ShowHelp('Step through your own buffs and cancel one without the mouse.\n' ..
                                 '/bind syntax: ^ ctrl, ! alt, + shift. e.g. ^E, LEFT, NUMPAD4.\n' ..
+                                'Use a pipe character to bind multiple keys, e.g. J|LEFT.\n' ..
                                 'Clear a box to unbind it.');
 
             local keynav_h = #keynav.BINDS * imgui.GetFrameHeightWithSpacing()

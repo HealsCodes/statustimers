@@ -70,7 +70,11 @@ local function parse_keybind(kb, keybind)
         mods[mod] = mod_prefix ~= nil and mod_prefix:find(char, 1, true) ~= nil;
     end
 
-    return kb:S2D(key_name or ''), mods;
+    return kb:S2D((key_name or ''):upper()), mods;
+end
+
+local function each_key(keybind)
+    return keybind:gmatch('[^|%s]+');
 end
 
 local function unbind(kb, action)
@@ -79,29 +83,35 @@ local function unbind(kb, action)
         return;
     end
 
-    local scancode, mods = parse_keybind(kb, current_keybind);
+    for keybind in each_key(current_keybind) do
+        local scancode, mods = parse_keybind(kb, keybind);
 
-    kb:Unbind(scancode, true, mods.alt, mods.apps, mods.ctrl, mods.shift, mods.win, false, false);
+        kb:Unbind(scancode, true, mods.alt, mods.apps, mods.ctrl, mods.shift, mods.win, false, false);
+    end
+
     state.current_binds[action] = nil;
 end
 
 local function bind(kb, action, pending_keybind)
-    local scancode, mods = parse_keybind(kb, pending_keybind);
-    if (scancode == 0) then
-        print(chat.header('statustimers'):append(chat.error(
-            ('%s is not a valid key for %s.'):fmt(pending_keybind, action))));
-        return;
+    local bound = T{};
+
+    for keybind in each_key(pending_keybind) do
+        local scancode, mods = parse_keybind(kb, keybind);
+        local taken = kb:IsBound(scancode, true, mods.alt, mods.apps, mods.ctrl, mods.shift, mods.win, false, false);
+
+        if (scancode == 0) then
+            print(chat.header('statustimers'):append(chat.error(
+                ('%s is not a valid key for %s.'):fmt(keybind, action))));
+        elseif (taken) then
+            print(chat.header('statustimers'):append(chat.error(
+                ('%s is already bound, pick another key for %s.'):fmt(keybind, action))));
+        else
+            kb:Bind(scancode, true, mods.alt, mods.apps, mods.ctrl, mods.shift, mods.win, false, false, COMMAND .. action);
+            bound[#bound + 1] = keybind;
+        end
     end
 
-    local taken = kb:IsBound(scancode, true, mods.alt, mods.apps, mods.ctrl, mods.shift, mods.win, false, false);
-    if (taken) then
-        print(chat.header('statustimers'):append(chat.error(
-            ('%s is already bound, pick another key for %s.'):fmt(pending_keybind, action))));
-        return;
-    end
-
-    kb:Bind(scancode, true, mods.alt, mods.apps, mods.ctrl, mods.shift, mods.win, false, false, COMMAND .. action);
-    state.current_binds[action] = pending_keybind;
+    state.current_binds[action] = table.concat(bound, '|');
 end
 
 local function pending_bind(b)
